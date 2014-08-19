@@ -29,6 +29,9 @@ gem 'spring',        group: :development
 # User account mgmt
 gem 'devise'
 
+# Erd generation
+gem 'rails-erd'
+
 # Use ActiveModel has_secure_password
 # gem 'bcrypt', '~> 3.1.7'
 

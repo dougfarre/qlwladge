@@ -11,7 +11,18 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140819221722) do
+ActiveRecord::Schema.define(version: 20140819224742) do
+
+  create_table "services", force: true do |t|
+    t.integer  "user_id"
+    t.string   "type"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.text     "access_token"
+    t.string   "token_type"
+    t.integer  "expires_in"
+    t.text     "refresh_token"
+  end
 
   create_table "users", force: true do |t|
     t.string   "email",                  default: "", null: false
