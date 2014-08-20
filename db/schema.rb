@@ -11,7 +11,20 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140819224742) do
+ActiveRecord::Schema.define(version: 20140820012526) do
+
+  create_table "fields", force: true do |t|
+    t.integer  "definition_id"
+    t.string   "name"
+    t.string   "display_name"
+    t.string   "description"
+    t.string   "data_type"
+    t.boolean  "allows_null"
+    t.boolean  "read_only"
+    t.boolean  "required"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
 
   create_table "services", force: true do |t|
     t.integer  "user_id"
