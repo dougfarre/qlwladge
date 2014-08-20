@@ -6,9 +6,12 @@ class CreateFields < ActiveRecord::Migration
       t.string :display_name
       t.string :description
       t.string :data_type
+      t.string :statement
+      t.string :uri
+      t.boolean :allows_duplicate
       t.boolean :allows_null
-      t.boolean :read_only
-      t.boolean :required
+      t.boolean :is_read_only
+      t.boolean :is_required
 
       t.timestamps
     end
