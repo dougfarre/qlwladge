@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140820173453) do
+ActiveRecord::Schema.define(version: 20140823055713) do
 
   create_table "definitions", force: true do |t|
     t.integer  "service_id"
@@ -50,14 +50,18 @@ ActiveRecord::Schema.define(version: 20140820173453) do
     t.string   "type"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.text     "access_token"
+    t.text     "oauth_token"
     t.string   "token_type"
     t.integer  "expires_in"
     t.text     "refresh_token"
     t.string   "name"
     t.string   "auth_type"
     t.string   "authorization_path"
-    t.string   "token_path"
+    t.string   "api_domain"
+    t.string   "authorization_domain"
+    t.string   "application_api_key"
+    t.string   "application_api_secret"
+    t.string   "api_path"
   end
 
   create_table "sync_operations", force: true do |t|

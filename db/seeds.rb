@@ -6,18 +6,16 @@
 #   cities = City.create([{ name: 'Chicago' }, { name: 'Copenhagen' }])
 #   Mayor.create(name: 'Emanuel', city: cities.first)
 
+# User
+user = User.create(
+    email: 'doug@locksport.com',
+    password: 'password',
+    password_confirmation: 'password'
+)
+
 # Services
-ServiceType.create([
-  {
-    name: 'Eloqua',
-    auth_type: 'oauth2',
-    authorize_path: '/auth/oauth2/authorize',
-    token_path: '/auth/oauth2/token'
-  },
-  {
-    name: 'Marketo',
-    auth_type: 'oauth2',
-    authorize_path: '',
-    token_path: '/identity/oauth/token'
-  }
-])
+
+user.services << Eloqua.create()
+user.save
+user.services << Marketo.create()
+user.save
