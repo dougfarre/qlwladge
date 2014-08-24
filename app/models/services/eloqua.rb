@@ -5,6 +5,9 @@ class Eloqua < Service
     self.name ||= 'Eloqua'
     self.auth_type ||= 'oauth2'
     self.authorization_path ||= '/auth/oauth2/authorize'
-    self.token_path ||= '/auth/oauth2/token'
+  end
+
+  def self.model_name
+    Service.model_name
   end
 end

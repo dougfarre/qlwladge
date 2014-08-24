@@ -1,22 +1,33 @@
 class Service < ActiveRecord::Base
   attr_accessor :custom_domain
-  after_initialize :assign_type, if: :new_record?
+
+  after_initialize :assign_type
+  before_validation :name_is_valid_type
+  before_save :init
+
   belongs_to :user
   has_many :definitions
-  validates_uniqueness_of :user_id, :type
-  validates_presence_of :name
-  validate :check_name_values
+
+  #validates_uniqueness_of :user_id, :type
+  validate :name_is_valid_type
+
+  def name=(value)
+    write_attribute(:name, value)
+    assign_type
+  end
 
   private
 
   # Validators & callbacks
-  def check_name_values
-    unless Service.subclasses.map(&:name).include? self.name
-      errors.add(:name, "Service of type " + self.name + " is not supported.")
-    end
+  def assign_type
+    self.type ||= self.name if name_is_valid_type
   end
 
-  def assign_type
-    self.type = self.name
+  def name_is_valid_type
+    return true if Service.subclasses.map(&:name).include? self.name
+    error_message = ": Service of type '" + self.name.to_s + "' is not supported."
+
+    errors.add(:name, error_message) if self.errors[:name].blank?
+    false
   end
 end

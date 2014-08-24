@@ -25,6 +25,8 @@ class ServicesController < ApplicationController
   # POST /services.json
   def create
     @service = Service.new(service_params)
+    @service = @service.becomes(service_params[:name].constantize) if @service.valid?
+    @service.user = current_user
 
     respond_to do |format|
       if @service.save
@@ -55,6 +57,7 @@ class ServicesController < ApplicationController
   # DELETE /services/1.json
   def destroy
     @service.destroy
+    binding.pry
     respond_to do |format|
       format.html { redirect_to services_url, notice: 'Service was successfully destroyed.' }
       format.json { head :no_content }
@@ -62,18 +65,26 @@ class ServicesController < ApplicationController
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_service
-      @service = Service.find(params[:id])
-    end
 
-    # Never trust parameters from the scary internet, only allow the white list through.
-    def service_params
-      params.require(:service).permit(:name, :auth_type, :authorization_path,
-                                      :api_domain, :api_path, 
-                                      :authorization_domain, :authorization_path,
-                                      :token_type, :token_path,
-                                      :application_api_key, :application_api_secret,
-                                      :custom_domain)
-    end
+  # Use callbacks to share common setup or constraints between actions.
+  def set_service
+    @service = Service.find(params[:id])
+    @service = @service.becomes(@service.type.constantize) if @service.valid?
+  end
+
+  # Never trust parameters from the scary internet, only allow the white list through.
+  def service_params
+    params
+      .require(:service)
+      .permit(:name, :auth_type, :authorization_path,
+        :api_domain, :api_path,
+        :authorization_domain, :authorization_path,
+        :application_api_key, :application_api_secret,
+        :custom_domain, :service)
+  end
+
+  def is_valid_service_type(service_name)
+    Service.subclasses.map(&:name).include? service_name
+  end
+
 end
