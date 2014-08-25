@@ -55,7 +55,7 @@ class ServicesControllerTest < ActionController::TestCase
   end
 
   test "should update service" do
-    patch :update, id: @service, service: { application_api_key: 'data.api.com' }
+    patch :update, id: @service, service: { app_api_key: 'data.api.com' }
     assert_redirected_to service_path(assigns(:service))
   end
 
@@ -63,7 +63,7 @@ class ServicesControllerTest < ActionController::TestCase
     custom_domain = 'http://data.api.com'
     patch :update, id: @service, service: { custom_domain: custom_domain }
     assert_equal(custom_domain, @service.api_domain)
-    assert_equal(custom_domain, @service.authorization_domain)
+    assert_equal(custom_domain, @service.auth_domain)
   end
 
   test "should destroy service" do

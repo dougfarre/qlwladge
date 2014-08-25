@@ -75,10 +75,9 @@ class ServicesController < ApplicationController
   def service_params
     params
       .require(:service)
-      .permit(:name, :auth_type, :authorization_path,
-        :api_domain, :api_path,
-        :authorization_domain, :authorization_path,
-        :application_api_key, :application_api_secret,
+      .permit(:name, :api_domain, :api_path,
+        :auth_domain, :auth_path, :auth_type,
+        :app_api_key, :app_api_secret,
         :custom_domain, :service)
   end
 

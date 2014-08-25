@@ -16,6 +16,15 @@ class Service < ActiveRecord::Base
     assign_type
   end
 
+  # Class methods
+  def self.new(attributes=nil)
+    service = super(attributes)
+    service_class = attributes[:name].constantize rescue nil
+    service = service.becomes(service_class) if service_class && service.valid?
+
+    return service
+  end
+
   private
 
   # Validators & callbacks

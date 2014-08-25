@@ -14,29 +14,7 @@
   <%= f.label :name, '3rd Party Service' %>
   <%= f.select :name, Service.subclasses.map(&:name), prompt: "Select Supported Service" %> 
 
-  <%= f.label :auth_type, 'Authorization Type' %>
-  <%= f.select :auth_type, ['rt', 'rad'], prompt: "Select Authorization Type" %>
-
-  <%= f.label :authorization_domain, 'Authorization Domain' %>
-  <%= f.text_field :authorization_domain %>
-
-  <%= f.label :authorization_path, 'Authorization Path' %>
-  <%= f.text_field :authorization_path %>
-
-  <%= f.label :api_domain %>
-  <%= f.text_field :api_domain %>
-
-  <%= f.label :api_path %>
-  <%= f.text_field :api_path %>
-
-  <%= f.label :application_api_key, 'Customer Service Client ID' %>
-  <%= f.text_field :application_api_key %>
-
-  <%= f.label :application_api_secret, 'Custom Service Client Secret' %>
-  <%= f.text_field :application_api_secret %>
-
-  <%= f.label :application_api_secret %>
-  <%= f.text_field :application_api_secret %>
+  <%= render @service.name.downcase + '_form' %>
 
   <div class="actions">
     <%= f.submit %>
