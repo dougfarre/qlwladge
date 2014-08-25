@@ -1,12 +1,13 @@
 class Service < ActiveRecord::Base
   attr_accessor :custom_domain
+  attr_accessor :custom_client_id, :custom_client_secret
+
+  belongs_to :user
+  has_many :definitions
 
   after_initialize :assign_type
   before_validation :name_is_valid_type
   before_save :init
-
-  belongs_to :user
-  has_many :definitions
 
   #validates_uniqueness_of :user_id, :type
   validate :name_is_valid_type
@@ -14,15 +15,6 @@ class Service < ActiveRecord::Base
   def name=(value)
     write_attribute(:name, value)
     assign_type
-  end
-
-  # Class methods
-  def self.new(attributes=nil)
-    service = super(attributes)
-    service_class = attributes[:name].constantize rescue nil
-    service = service.becomes(service_class) if service_class && service.valid?
-
-    return service
   end
 
   private

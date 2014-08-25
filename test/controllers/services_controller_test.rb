@@ -17,7 +17,7 @@ class ServicesControllerTest < ActionController::TestCase
   end
 
   test "should get new" do
-    get :new
+    get :new, service: {name: 'Marketo'}
     assert_response :success
   end
 
@@ -25,16 +25,14 @@ class ServicesControllerTest < ActionController::TestCase
     assert_difference('Service.count') do
       post :create, service: {name: 'Marketo', user_id: 100 }
     end
-
     assert_redirected_to service_path(assigns(:service))
   end
+
   test "service specific attributes should auto set on create" do
     assert_difference('Service.count') do
       post :create, service: {name: 'Marketo', user_id: 440 }
     end
-
     service = Service.last
-
     assert(!service.api_path.blank?)
   end
 
@@ -62,8 +60,8 @@ class ServicesControllerTest < ActionController::TestCase
   test "should update api and authorization domains" do
     custom_domain = 'http://data.api.com'
     patch :update, id: @service, service: { custom_domain: custom_domain }
-    assert_equal(custom_domain, @service.api_domain)
     assert_equal(custom_domain, @service.auth_domain)
+    assert_equal(custom_domain, @service.api_domain)
   end
 
   test "should destroy service" do

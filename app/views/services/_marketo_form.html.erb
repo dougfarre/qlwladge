@@ -1,11 +1,19 @@
-<%= f.label :custom_domain, 'Domain provided by Marketo' %>
-https://<%= f.text_field :custom_domain %>
+<p>
+<%= new_service.label :custom_domain, 'Domain provided by Marketo' %>
+https://<%= new_service.text_field :custom_domain %>
+</p>
 
-<%= f.label :app_api_key, 'Custome Service Client ID' %>
-<%= f.text_field :app_api_key %>
+<p>
+<%= new_service.label :custom_client_id %>
+<%= new_service.text_field :custom_client_id %>
+</p>
 
-<%= f.label :app_api_secret, 'Custom Service Client Secret' %>
-<%= f.text_field :app_api_secret %>
+<p>
+<%= new_service.label :custom_client_secret %>
+<%= new_service.text_field :custom_client_secret %>
+</p>
 
-<%= f.label :auth_user, 'Authorized User ID' %>
-<%= f.text_field :auth_user %>
+<p>
+<%= new_service.label :auth_user, 'Authorized User ID' %>
+<%= new_service.text_field :auth_user %>
+p</p>

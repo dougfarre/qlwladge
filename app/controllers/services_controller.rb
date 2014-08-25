@@ -14,7 +14,7 @@ class ServicesController < ApplicationController
 
   # GET /services/new
   def new
-    @service = Service.new
+    @service = Service.new(service_params)
   end
 
   # GET /services/1/edit
@@ -24,8 +24,9 @@ class ServicesController < ApplicationController
   # POST /services
   # POST /services.json
   def create
-    @service = Service.new(service_params)
+    @service = Service.new(name: service_params[:name])
     @service = @service.becomes(service_params[:name].constantize) if @service.valid?
+    @service.assign_attributes(service_params)
     @service.user = current_user
 
     respond_to do |format|
@@ -75,9 +76,10 @@ class ServicesController < ApplicationController
   def service_params
     params
       .require(:service)
-      .permit(:name, :api_domain, :api_path,
-        :auth_domain, :auth_path, :auth_type,
+      .permit(:service, :name, :api_domain, :api_path,
+        :auth_domain, :auth_path, :auth_type, :auth_user,
         :app_api_key, :app_api_secret,
+        :custom_client_id, :custom_client_secret,
         :custom_domain, :service)
   end
 

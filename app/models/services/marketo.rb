@@ -1,6 +1,6 @@
 class Marketo < Service
-  alias_attribute :custom_client_id, :app_api_key
-  alias_attribute :custom_client_secret, :app_api_secret
+  validates_presence_of :custom_domain
+  validates_presence_of :custom_client_id, :custom_client_secret
 
   def init
     self.name ||= 'Marketo'
@@ -15,14 +15,30 @@ class Marketo < Service
   end
 
   def custom_domain=(value)
-    uri = URI.parse(value)
-
-    if uri.kind_of?(URI::HTTP) or uri.kind_of?(URI::HTTPS)
-      write_attribute(:auth_domain, uri.to_s)
-      write_attribute(:api_domain, uri.to_s)
-    else
-      errors.add(:host, "Host url is not valid.")
-    end
+    write_attribute(:auth_domain, value)
+    write_attribute(:api_domain, value)
+    binding.pry
   end
+
+  def custom_domain
+    auth_domain
+  end
+
+  def custom_client_id=(value)
+    write_attribute(:app_api_key, value)
+  end
+
+  def custom_client_secret=(value)
+    write_attribute(:app_api_secret, value)
+  end
+
+  def custom_client_id
+    app_api_key
+  end
+
+   def custom_client_secret
+    app_api_secret
+   end
+  
 end
 
