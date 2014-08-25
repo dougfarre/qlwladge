@@ -9,12 +9,19 @@ class Service < ActiveRecord::Base
   before_validation :name_is_valid_type
   before_save :init
 
-  #validates_uniqueness_of :user_id, :type
+  validates_uniqueness_of :user_id, scope: :name
   validate :name_is_valid_type
 
   def name=(value)
     write_attribute(:name, value)
     assign_type
+  end
+
+  # Class methods
+  def self.services
+    subclasses = Service.subclasses.map(&:name)
+    subclasses = ['Eloqua', 'Marketo'] if subclasses.blank?
+    return subclasses
   end
 
   private
@@ -25,7 +32,7 @@ class Service < ActiveRecord::Base
   end
 
   def name_is_valid_type
-    return true if Service.subclasses.map(&:name).include? self.name
+    return true if self.class.services.include? self.name
     error_message = ": Service of type '" + self.name.to_s + "' is not supported."
 
     errors.add(:name, error_message) if self.errors[:name].blank?

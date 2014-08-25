@@ -17,7 +17,6 @@ class Marketo < Service
   def custom_domain=(value)
     write_attribute(:auth_domain, value)
     write_attribute(:api_domain, value)
-    binding.pry
   end
 
   def custom_domain
@@ -36,9 +35,8 @@ class Marketo < Service
     app_api_key
   end
 
-   def custom_client_secret
+  def custom_client_secret
     app_api_secret
-   end
-  
+  end
 end
 

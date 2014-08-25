@@ -20,7 +20,7 @@
 
 <br>
 
-<% Service.subclasses.map(&:name).each do |service_name| %>
+<% Service.services.each do |service_name| %>
   <% route = new_service_path(service: { name: service_name }) %>
   <%= link_to 'Connect to ' + service_name, route %>
   <br/>

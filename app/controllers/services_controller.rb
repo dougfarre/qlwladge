@@ -14,7 +14,7 @@ class ServicesController < ApplicationController
 
   # GET /services/new
   def new
-    @service = Service.new(service_params)
+    @service = Service.new(name: service_params[:name])
   end
 
   # GET /services/1/edit
@@ -82,9 +82,4 @@ class ServicesController < ApplicationController
         :custom_client_id, :custom_client_secret,
         :custom_domain, :service)
   end
-
-  def is_valid_service_type(service_name)
-    Service.subclasses.map(&:name).include? service_name
-  end
-
 end

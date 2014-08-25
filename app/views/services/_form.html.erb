@@ -12,9 +12,9 @@
   <% end %>
 
   <% f.label :name, '3rd Party Service' %>
-  <% f.select :name, Service.subclasses.map(&:name), prompt: "Select Supported Service" %> 
- 
-  <% if @service.name && @service.valid? %>
+  <% f.select :name, Service.services, prompt: "Select Supported Service" %> 
+
+  <% if @service.type %>
     <%= render @service.name.downcase + '_form', new_service:f %>
   <% end %>
 
