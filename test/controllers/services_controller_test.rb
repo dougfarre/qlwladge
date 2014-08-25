@@ -41,7 +41,7 @@ class ServicesControllerTest < ActionController::TestCase
   test "shouln't create when service is invalid" do
     service_count = Service.count
     post :create, service: {name: 'Chicken', user_id: 100 }
-    assert_equal(Service.count, service_count) 
+    assert_equal(Service.count, service_count)
   end
 
   test "should show service" do
@@ -55,14 +55,8 @@ class ServicesControllerTest < ActionController::TestCase
   end
 
   test "should update service" do
-    patch :update, id: @service, service: { api_domain: 'data.api.com' }
-    puts 'service erros on line 58!! : ' + @service.errors.to_a.to_s
+    patch :update, id: @service, service: { application_api_key: 'data.api.com' }
     assert_redirected_to service_path(assigns(:service))
-  end
-
-  test "should update service type" do
-    patch :update, id: @service, service: { name: 'Eloqua' }
-    assert_equal(@service.type, 'Eloqua')
   end
 
   test "should update api and authorization domains" do

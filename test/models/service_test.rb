@@ -26,4 +26,12 @@ class ServiceTest < ActiveSupport::TestCase
     service = Service.new(name: 'Marketo', user_id: @user_two.id)
     assert service.type == 'Marketo'
   end
+
+  test "setting custom_domain also sets authorization_domain" do
+    custom_domain = "http://api.com"
+    service = Service.new(name: 'Marketo', user_id: @user_two.id)
+    service = service.becomes(Marketo)
+    service.update_attribute(:custom_domain, custom_domain)
+    assert service.authorization_domain == custom_domain
+  end
 end

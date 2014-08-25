@@ -57,7 +57,6 @@ class ServicesController < ApplicationController
   # DELETE /services/1.json
   def destroy
     @service.destroy
-    binding.pry
     respond_to do |format|
       format.html { redirect_to services_url, notice: 'Service was successfully destroyed.' }
       format.json { head :no_content }
