@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140829201100) do
+ActiveRecord::Schema.define(version: 20140829205310) do
 
   create_table "definitions", force: true do |t|
     t.integer  "service_id"
@@ -65,6 +65,7 @@ ActiveRecord::Schema.define(version: 20140829201100) do
     t.string   "token_path"
     t.string   "auth_user"
     t.string   "scope"
+    t.string   "auth_error"
   end
 
   create_table "sync_operations", force: true do |t|

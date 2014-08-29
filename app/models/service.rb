@@ -18,7 +18,11 @@ class Service < ActiveRecord::Base
   end
 
   def authenticate
-    raise "Object.authenticate is not defined"
+    raise "object.authenticate is not defined"
+  end
+
+  def authorization_status
+    raise "object.authorization_status is not defined"
   end
 
   # Class methods

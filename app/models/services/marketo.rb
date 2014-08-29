@@ -46,14 +46,14 @@ class Marketo < Service
     self.update_attributes(response)
   end
 
-  def refresh_access_token
-
+  def authorization_status
+    not_authed_message = "Not Authorized (" + self.auth_error + ")"
+    return not_authed_message if self.access_token.blank?
+    return "Expired" if is_token_expired
+    "Authorized"
   end
+
   private
-
-  def auth_token=(value)
-    super
-  end
 
   def check_required_attributes(attrs)
     blank_attrs = attrs.select{|attr| self.send(attr).blank?}
@@ -74,7 +74,16 @@ class Marketo < Service
   end
 
   def check_response_object(response)
-    raise response[:error_description] if response[:error_description]
+    if response[:error_description]
+      self.update_attribute(:auth_error, response[:error_description])
+      raise response[:error_description]
+    end
+
+  end
+
+  def is_token_expired
+    expires_at = self.updated_at self.expires_in.seconds
+    Time.now > expires_at
   end
 end
 
