@@ -17,11 +17,16 @@ class Service < ActiveRecord::Base
     assign_type
   end
 
+  def authenticate
+    raise "Object.authenticate is not defined"
+  end
+
   # Class methods
   def self.services
-    subclasses = Service.subclasses.map(&:name)
-    subclasses = ['Eloqua', 'Marketo'] if subclasses.blank?
-    return subclasses
+    #subclasses = Service.subclasses.map(&:name)
+    #subclasses = ['Eloqua', 'Marketo'] if subclasses.blank?
+    #return subclasses
+    ['Eloqua', 'Marketo']
   end
 
   private

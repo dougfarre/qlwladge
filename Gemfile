@@ -32,6 +32,9 @@ gem 'devise'
 # Erd generation
 gem 'rails-erd'
 
+# Consume REST services
+gem 'httparty'
+
 # Use ActiveModel has_secure_password
 # gem 'bcrypt', '~> 3.1.7'
 

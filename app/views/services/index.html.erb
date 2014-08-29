@@ -10,6 +10,7 @@
   <tbody>
     <% @services.each do |service| %>
       <tr>
+        <td><%= service.name %></td>
         <td><%= link_to 'Show', service %></td>
         <td><%= link_to 'Edit', edit_service_path(service) %></td>
         <td><%= link_to 'Destroy', service, method: :delete, data: { confirm: 'Are you sure?' } %></td>
@@ -21,7 +22,9 @@
 <br>
 
 <% Service.services.each do |service_name| %>
-  <% route = new_service_path(service: { name: service_name }) %>
-  <%= link_to 'Connect to ' + service_name, route %>
+  <% if current_user.services.where(name: service_name).blank? %>
+    <% route = new_service_path(service: { name: service_name }) %>
+    <%= link_to 'Connect to ' + service_name, route %>
+  <% end %>
   <br/>
 <% end %>

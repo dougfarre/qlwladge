@@ -7,15 +7,15 @@
 #   Mayor.create(name: 'Emanuel', city: cities.first)
 
 # User
-user = User.create(
+user = User.new(
     email: 'doug@locksport.com',
     password: 'password',
     password_confirmation: 'password'
 )
+user.save!
 
 # Services
 
 user.services << Eloqua.create()
-user.save
 user.services << Marketo.create()
 user.save
