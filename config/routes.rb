@@ -10,7 +10,14 @@ Rails.application.routes.draw do
     #root to: "devise/sessions#new"
   end
 
-  resources :services
+  resources :services do
+    resources :definitions
+  end
+
+  resources :definitions do
+    resources :destination_fields, :mappings, :sync_operations
+  end
+
   resources :eloqua, :controller => 'services'
   resources :marketo, :controller => 'services'
 

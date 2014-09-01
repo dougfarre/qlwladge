@@ -4,7 +4,7 @@ class ServicesController < ApplicationController
   # GET /services
   # GET /services.json
   def index
-    @services = current_user.services
+    @services = current_user.services.map{|s| s.becomes(s.name.constantize)}
   end
 
   # GET /services/1
@@ -31,7 +31,8 @@ class ServicesController < ApplicationController
 
     respond_to do |format|
       if @service.save
-        format.html { redirect_to @service, notice: 'Service was successfully created.' }
+        @service.authenticate
+        format.html { redirect_to @service, notice: get_update_message('created') }
         format.json { render :show, status: :created, location: @service }
       else
         format.html { render :new }
@@ -45,7 +46,8 @@ class ServicesController < ApplicationController
   def update
     respond_to do |format|
       if @service.update(service_params)
-        format.html { redirect_to @service, notice: 'Service was successfully updated.' }
+        @service.authenticate
+        format.html { redirect_to @service, notice: get_update_message('updated') }
         format.json { render :show, status: :ok, location: @service }
       else
         format.html { render :edit }
@@ -70,6 +72,11 @@ class ServicesController < ApplicationController
   def set_service
     @service = Service.find(params[:id])
     @service = @service.becomes(@service.type.constantize) if @service.valid?
+  end
+
+  def get_update_message(action)
+    'Service was successfully ' + action + '. ' +
+      'The new Auth Status is: ' + @service.auth_status + '.'
   end
 
   # Never trust parameters from the scary internet, only allow the white list through.

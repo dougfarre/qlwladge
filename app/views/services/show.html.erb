@@ -1,2 +1,18 @@
+<h2><%= @service.name %></h2>
+<b>Auth Status: </b><i><%= @service.auth_status %></i>
+<br/><br/>
+<b>Auth Type: </b><i><%= @service.auth_type %><i/>
+<br/><br/>
+<b>Token Access: </b><i><%= @service.auth_domain + @service.token_path %><i/>
+<br/><br/>
+<b>API Access: </b><i><%= @service.api_domain + @service.api_path %><i/>
+<br/><br/>
+<b>Authorized User: </b><i><%= @service.auth_user %><i/>
+<br/><br/>
+
+<h3>Service API Defintions
+
+
+
 <%= link_to 'Edit', edit_service_path(@service) %> |
 <%= link_to 'Back', services_path %>

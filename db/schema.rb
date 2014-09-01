@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140829205310) do
+ActiveRecord::Schema.define(version: 20140901205332) do
 
   create_table "definitions", force: true do |t|
     t.integer  "service_id"
@@ -19,6 +19,7 @@ ActiveRecord::Schema.define(version: 20140829205310) do
     t.string   "type"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.string   "description"
   end
 
   create_table "destination_fields", force: true do |t|
@@ -45,6 +46,16 @@ ActiveRecord::Schema.define(version: 20140829205310) do
     t.datetime "updated_at"
   end
 
+  create_table "request_parameters", force: true do |t|
+    t.integer  "definition_id"
+    t.string   "definition"
+    t.string   "name"
+    t.string   "value"
+    t.boolean  "optional"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
   create_table "services", force: true do |t|
     t.integer  "user_id"
     t.string   "type"
@@ -66,6 +77,9 @@ ActiveRecord::Schema.define(version: 20140829205310) do
     t.string   "auth_user"
     t.string   "scope"
     t.string   "auth_error"
+    t.string   "discover_path"
+    t.string   "lead_path"
+    t.text     "request_parameters"
   end
 
   create_table "sync_operations", force: true do |t|

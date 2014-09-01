@@ -1,19 +1,37 @@
-<p>
-<%= new_service.label :custom_domain, 'Domain provided by Marketo' %>
-https://<%= new_service.text_field :custom_domain %>
-</p>
 
-<p>
-<%= new_service.label :custom_client_id %>
-<%= new_service.text_field :custom_client_id %>
-</p>
+<div width="500px;">
+  <div style="width:210px;display:inline-block;text-align:right;">
+    <%= new_service.label :custom_domain, 'Domain provided by Marketo' %>
+  </div>
+  <div style="display:inline-block;">
+    <%= new_service.text_field :custom_domain, size: "40" %>
+  </div>
 
-<p>
-<%= new_service.label :custom_client_secret %>
-<%= new_service.text_field :custom_client_secret %>
-</p>
+  <div style="clear:both;"></div>
 
-<p>
-<%= new_service.label :auth_user, 'Authorized User ID' %>
-<%= new_service.text_field :auth_user %>
-p</p>
+  <div style="width:210px;display:inline-block;text-align:right;">
+    <%= new_service.label :custom_client_id %>
+  </div>
+  <div style="display:inline-block;">
+    <%= new_service.text_field :custom_client_id, size: "40"%>
+  </div>
+
+  <div style="clear:both;"></div>
+
+  <div style="width:210px;display:inline-block;text-align:right;">
+    <%= new_service.label :custom_client_secret %>
+  </div>
+  <div style="display:inline-block;">
+    <%= new_service.text_field :custom_client_secret, size: "40"%>
+  </div>
+
+  <div style="clear:both;"></div>
+
+  <div style="width:210px;display:inline-block;text-align:right;">
+    <%= new_service.label :auth_user, 'Authorized user ID' %>
+  </div>
+  <div style="display:inline-block;">
+    <%= new_service.text_field :auth_user, size: "40" %>
+  </div>
+  <div style="clear:both;"></div>
+</div>

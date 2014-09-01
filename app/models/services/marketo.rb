@@ -39,30 +39,35 @@ class Marketo < Service
     self.app_api_secret
   end
 
-  def get_access_token
-    check_required_attributes(user_defined_attrs_for_authenticate)
+  def authenticate
+    check_required_attributes(attrs_for_auth_action)
     response = MarketoParty.get(token_address)
-    check_response_object(response)
-    self.update_attributes(response)
+    return unless is_valid_response(response)
+
+    self.update_attributes!(response)
+    self.update_attribute(:auth_error, '')
   end
 
-  def authorization_status
-    not_authed_message = "Not Authorized (" + self.auth_error + ")"
-    return not_authed_message if self.access_token.blank?
-    return "Expired" if is_token_expired
-    "Authorized"
+  def auth_status
+    check_required_attributes(attrs_for_auth_status)
+
+    if !self.auth_error.blank?
+      return "Authentication Failed (" + self.auth_error + ")"
+    elsif is_token_expired
+      return "Authentication Token Expired"
+    else
+      return "Authenticated"
+    end
   end
 
   private
 
-  def check_required_attributes(attrs)
-    blank_attrs = attrs.select{|attr| self.send(attr).blank?}
-    error_message = "The following attribute(s) is/are not defined: " + blank_attrs.to_s
-    raise error_message unless blank_attrs.blank?
+  def attrs_for_auth_action
+    [:custom_domain, :custom_client_id, :custom_client_secret]
   end
 
-  def user_defined_attrs_for_authenticate
-    [:custom_domain, :custom_client_id, :custom_client_secret]
+  def attrs_for_auth_status
+    [:updated_at, :expires_in]
   end
 
   def token_address
@@ -73,16 +78,24 @@ class Marketo < Service
     token_address + token_params
   end
 
-  def check_response_object(response)
-    if response[:error_description]
-      self.update_attribute(:auth_error, response[:error_description])
-      raise response[:error_description]
+  def is_valid_response(response)
+    response_error = response['error_description']
+    if response_error
+      self.update_attribute(:auth_error, response_error)
+      errors.add(:base, response_error) and return false
+    else
+      true
     end
+  end
 
+  def check_required_attributes(attrs)
+    blank_attrs = attrs.select{|attr| self.send(attr).blank?}
+    error_message = "The following attribute(s) is/are not defined: " + blank_attrs.to_s
+    raise error_message unless blank_attrs.blank?
   end
 
   def is_token_expired
-    expires_at = self.updated_at self.expires_in.seconds
+    expires_at = self.updated_at + self.expires_in.seconds
     Time.now > expires_at
   end
 end

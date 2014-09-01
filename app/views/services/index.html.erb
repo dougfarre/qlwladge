@@ -1,19 +1,26 @@
-<h1>Listing services</h1>
+<h2>Listing services</h2>
 
 <table>
   <thead>
     <tr>
-      <th colspan="3"></th>
+      <th width="25px">ID</th>
+      <th width="100px">Service Type</th>
+      <th width="200px">Auth Status</th>
+      <th width="100px">Mappings</th>
+      <th width="200px" colspan='3'>Actions</th>
     </tr>
   </thead>
 
   <tbody>
     <% @services.each do |service| %>
       <tr>
-        <td><%= service.name %></td>
-        <td><%= link_to 'Show', service %></td>
-        <td><%= link_to 'Edit', edit_service_path(service) %></td>
-        <td><%= link_to 'Destroy', service, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+        <td style="text-align:center;"><%= service.id %></td>
+        <td style="text-align:center;"><%= service.name %></td>
+        <td style="text-align:center;"><%= service.auth_status %></td>
+        <td style="text-align:center;"><%= service.definitions.count %></td>
+        <td style="text-align:center;"><%= link_to 'Show', service %> |</td>
+        <td style="text-align:center;"><%= link_to 'Edit', edit_service_path(service) %> |</td>
+        <td style="text-align:center;"><%= link_to 'Destroy', service, method: :delete, data: { confirm: 'Are you sure?' } %></td>
       </tr>
     <% end %>
   </tbody>
