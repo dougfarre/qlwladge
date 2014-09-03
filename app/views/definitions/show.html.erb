@@ -1,4 +1,77 @@
-<p id="notice"><%= notice %></p>
+<h1><%= @service.name %> Service Definition</h1>
+<p style="margin-top:-15px;"><%= @definition.description %></p>
 
-<%= link_to 'Edit', edit_definition_path(@definition) %> |
-<%= link_to 'Back', definitions_path %>
+<h2>REST API Request Parameters</h2>
+<p style="margin-top:-15px;">Leave blank and no value will be sent.</p>
+<table style="table-layout:fixed; width:100%;">
+  <tr>
+    <th style="width: 100px; text-align:right; padding-right:25px;">Name</th>
+    <th>Description</th>
+    <th style="width:100px; text-align:left;">Required?</th>
+    <th style="text-align:left;">Value</th>
+  </tr>
+  <% @definition.request_parameters.each do |param| %>
+    <% param_tag = 'request_parameters[' + param.name + ']' %>
+    <tr>
+      <td style="text-align: right; padding-right:25px;"><%= param.name %></td>
+      <td style="word-wrap:break-word; text-align:center;"><%= param.description %></td>
+      <td><%= param.optional.to_s %></td>
+      <td><%= param.value %></td>
+    </tr>
+  <% end %>
+  <tr>
+    <td></td>
+    <td style="text-align:center;">
+      <%= link_to 'Edit Params', edit_service_definition_path(@service, @definition) %>
+    </td>
+    <td></td>
+    <td></td>
+  </tr>
+</table>
+<br/>
+<br/>
+
+<h2>Source to Destination Field Mapping</h2>
+<p style="margin-top:-15px;"></p>
+<%= form_for [@service, @definition], :html => {:multipart => true} do |f| %>
+  <table style="table-layout:fixed; width:100%;">
+    <tr>
+      <th style="width:20px;">Unique Header</th>
+      <th style="width:40px;">Source Header</th>
+      <th style="width:100px; text-align:left;">Destination Field</th>
+      <th style="width:50px; text-align:left;">Data Type</th>
+      <th style="width:50px; text-align:left;">Required?</th>
+      <th style="width:50px; text-align:left;">Allows Null</th>
+    </tr>
+    <% @definition.mappings.each do |mapping| %>
+      <% header = mapping.source_header %>
+      <% tag_name =  'definition[source_headers][' + header + ']' %>
+      <% options = @definition.destination_fields.map{|d| [d.display_name, d.id]} %>
+      <tr>
+        <td style="text-align:center;">
+          <% radio_tag = 'mappings[source_key]' %>
+          <%= radio_button_tag radio_tag, mapping.id, mapping.source_key == true %>
+        </td>
+        <td style="text-align:right; padding-right:40px;"><%= header %></td>
+        <td style="width:200px;">
+          <%= select_tag tag_name, options_for_select(options),
+            selected: mapping.destination_field_id,
+            style: 'width:150px;' %>
+        </td>
+        <td id=<%= tag_name + '[destination_field][data_type]' %></td>
+        <td id=<%= tag_name + '[destination_field][is_required]' %></td>
+        <td id=<%= tag_name + '[destination_field][allows_null]' %></td>
+      </tr>
+    <% end %>
+    <tr>
+      <td colspan=5 style="text-align:center;">
+        <div class="actions"><%= f.submit %></div>
+      </td>
+    </tr>
+  </table>
+<% end %>
+<br/>
+<br/>
+
+
+<%= link_to 'Back', service_path(@service) %>

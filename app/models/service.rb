@@ -10,6 +10,7 @@ class Service < ActiveRecord::Base
   before_save :init
 
   validates_uniqueness_of :user_id, scope: :name
+  validates_presence_of :discover_path, :lead_path, :request_parameters
   validate :name_is_valid_type
 
   def name=(value)
@@ -25,7 +26,20 @@ class Service < ActiveRecord::Base
     raise "object.authorization_status is not defined"
   end
 
+  def lead_address
+    raise "object.lead_address is not defined"
+  end
+
+  def discovery_address
+    raise "object.authorization_status is not defined"
+  end
+
+  def get_discovery
+    raise "Service.get_discovery is not defined"
+  end
+
   # Class methods
+
   def self.services
     #subclasses = Service.subclasses.map(&:name)
     #subclasses = ['Eloqua', 'Marketo'] if subclasses.blank?
@@ -34,6 +48,10 @@ class Service < ActiveRecord::Base
   end
 
   private
+
+  def make_api_call(type, address, data)
+    raise "object.get_api_call is not defined"
+  end
 
   # Validators & callbacks
   def assign_type
@@ -46,5 +64,14 @@ class Service < ActiveRecord::Base
 
     errors.add(:name, error_message) if self.errors[:name].blank?
     false
+  end
+
+  def load_parameters_file
+    path = Rails.root.to_s + 
+      '/app/models/services/' +
+      self.name.downcase +
+      '_parameters.yml'
+
+    YAML.load_file(path)
   end
 end

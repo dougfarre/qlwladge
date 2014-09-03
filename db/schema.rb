@@ -11,15 +11,15 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140901205332) do
+ActiveRecord::Schema.define(version: 20140903170944) do
 
   create_table "definitions", force: true do |t|
     t.integer  "service_id"
-    t.integer  "user_id"
     t.string   "type"
     t.datetime "created_at"
     t.datetime "updated_at"
     t.string   "description"
+    t.string   "source_file"
   end
 
   create_table "destination_fields", force: true do |t|
@@ -44,11 +44,12 @@ ActiveRecord::Schema.define(version: 20140901205332) do
     t.integer  "destination_field_id"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.boolean  "source_key"
   end
 
   create_table "request_parameters", force: true do |t|
     t.integer  "definition_id"
-    t.string   "definition"
+    t.string   "description"
     t.string   "name"
     t.string   "value"
     t.boolean  "optional"

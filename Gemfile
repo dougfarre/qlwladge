@@ -35,6 +35,9 @@ gem 'rails-erd'
 # Consume REST services
 gem 'httparty'
 
+# CSV Imports
+gem 'carrierwave'
+
 # Use ActiveModel has_secure_password
 # gem 'bcrypt', '~> 3.1.7'
 

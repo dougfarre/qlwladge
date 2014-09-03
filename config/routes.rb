@@ -11,11 +11,13 @@ Rails.application.routes.draw do
   end
 
   resources :services do
-    resources :definitions
+    resources :definitions #, shallow: true
   end
 
-  resources :definitions do
-    resources :destination_fields, :mappings, :sync_operations
+  resources :definitions, shallow: true do
+    resources :destination_fields
+    resources :mappings
+    resources :sync_operations
   end
 
   resources :eloqua, :controller => 'services'

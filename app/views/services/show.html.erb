@@ -10,9 +10,13 @@
 <b>Authorized User: </b><i><%= @service.auth_user %><i/>
 <br/><br/>
 
-<h3>Service API Defintions
+<%= link_to 'Edit service', edit_service_path(@service) %> 
+<br/><br/>
 
+<h2>Service API Defintions</h2>
+<%= render partial: 'definitions/index', locals: { definitions: @service.definitions } %>
 
-
-<%= link_to 'Edit', edit_service_path(@service) %> |
+<br/>
 <%= link_to 'Back', services_path %>
+
+

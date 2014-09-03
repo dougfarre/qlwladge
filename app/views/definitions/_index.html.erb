@@ -1,23 +1,22 @@
-<h1>Listing definitions</h1>
-
 <table>
   <thead>
     <tr>
+      <th>Description</th>
       <th colspan="3"></th>
     </tr>
   </thead>
 
   <tbody>
-    <% @definitions.each do |definition| %>
+    <% definitions.each do |definition| %>
       <tr>
-        <td><%= link_to 'Show', definition %></td>
+        <td><%= definition.description %></td>
+        <td><%= link_to 'Show', service_definition_path(@service, definition) %></td>
         <td><%= link_to 'Edit', edit_definition_path(definition) %></td>
         <td><%= link_to 'Destroy', definition, method: :delete, data: { confirm: 'Are you sure?' } %></td>
       </tr>
     <% end %>
   </tbody>
 </table>
+</br>
 
-<br>
-
-<%= link_to 'New Definition', new_definition_path %>
+<%= link_to 'New Definition', new_service_definition_path(@service) %>

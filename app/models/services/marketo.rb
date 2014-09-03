@@ -8,6 +8,9 @@ class Marketo < Service
     self.api_path ||= '/rest'
     self.auth_path ||= '/identity'
     self.token_path ||= '/identity/oauth/token'
+    self.discover_path ||= '/v1/leads/describe.json'
+    self.lead_path ||= '/v1/leads.json'
+    self.request_parameters ||= load_parameters_file.to_json
   end
 
   def self.model_name
@@ -60,7 +63,44 @@ class Marketo < Service
     end
   end
 
+  def lead_address
+    self.api_domain + self.lead_path
+  end
+
+  def discovery_address
+    self.api_domain + self.discover_path
+  end
+
+  def get_discovery
+    discovery_fields = make_api_call(self.discovery_address, 'get')
+
+    discovery_fields['result'].map { |f|
+      {
+        name: f['rest']['name'],
+        display_name: f['displayName'],
+        data_type: f['dataType'],
+        is_read_only: f['rest']['readOnly']
+      }
+    }
+  end
+
+  # Class Methods
+
   private
+
+  def make_api_call(address, type, data=nil)
+    headers = { 'Authorization' => 'Bearer ' + self.access_token }
+    response = MarketoParty.send(type || 'get', address, headers: headers)
+
+    return response unless response['success'] == false
+
+    unless response['errors'].detect{|error| error['code'] == '602'}.blank?
+      self.authenticate
+      make_api_call(address, type, data)
+    else
+      raise 'API ERROR: ' + response['errors'].to_s
+    end
+  end
 
   def attrs_for_auth_action
     [:custom_domain, :custom_client_id, :custom_client_secret]
