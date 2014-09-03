@@ -20,12 +20,13 @@ var DefinitionsController = Paloma.controller('Definitions');
 
 DefinitionsController.prototype.show = function() {
   $("select").change(function() {
-    var $element = $('#d_field_' + this.value),
-      d_field = JSON.parse($element.attr('value')),
-      header_name = $(this).parent().prev().text(),
-      tag_prefix = "td[id='mapping[" + header_name + "]";
+    if (this.value == "") return;
 
-   if (this.value == "") return;
+    var self = this,
+      hidden_d_field_element = $('input#d_field_' + self.value),
+      d_field = JSON.parse(hidden_d_field_element.val()),
+      header_name = $(this).parent().prev().text().trim(),
+      tag_prefix = "td[id='mapping[" + header_name + "]";
 
    $(tag_prefix + "[description]']").text(d_field.description);
    $(tag_prefix + "[data_type]']").text(d_field.data_type);
