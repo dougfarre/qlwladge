@@ -13,4 +13,23 @@
 //= require jquery
 //= require jquery_ujs
 //= require turbolinks
+//= require paloma
 //= require_tree .
+
+var DefinitionsController = Paloma.controller('Definitions');
+
+DefinitionsController.prototype.show = function() {
+  $("select").change(function() {
+    var $element = $('#d_field_' + this.value),
+      d_field = JSON.parse($element.attr('value')),
+      header_name = $(this).parent().prev().text(),
+      tag_prefix = "td[id='mapping[" + header_name + "]";
+
+   if (this.value == "") return;
+
+   $(tag_prefix + "[description]']").text(d_field.description);
+   $(tag_prefix + "[data_type]']").text(d_field.data_type);
+   $(tag_prefix + "[is_required]']").text(d_field.is_required);
+   $(tag_prefix + "[allows_null]']").text(d_field.allows_null);
+  }).change();
+};

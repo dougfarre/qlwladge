@@ -43,13 +43,14 @@
       <th style="width:20px;">Unique Header</th>
       <th style="width:40px;">Source Header</th>
       <th style="width:100px; text-align:left;">Destination Field</th>
+      <th style="width:100px; text-align:left;">Description</th>
       <th style="width:50px; text-align:left;">Data Type</th>
       <th style="width:50px; text-align:left;">Required?</th>
       <th style="width:50px; text-align:left;">Allows Null</th>
     </tr>
     <% @definition.mappings.each do |mapping| %>
       <% header = mapping.source_header %>
-      <% tag_name =  'definition[source_headers][' + header + ']' %>
+      <% tag_name =  'mapping[' + header + ']' %>
       <% qualified_d_fields = self.get_qualified_destination_fields(@definition) %>
       <% options = options_for_select(qualified_d_fields) %>
       <tr>
@@ -63,9 +64,10 @@
             selected: mapping.destination_field_id,
             style: 'width:150px;' %>
         </td>
-        <td id=<%= tag_name + '[destination_field][data_type]' %></td>
-        <td id=<%= tag_name + '[destination_field][is_required]' %></td>
-        <td id=<%= tag_name + '[destination_field][allows_null]' %></td>
+        <td id="<%= tag_name + '[description]' %>"></td>
+        <td id="<%= tag_name + '[data_type]' %>"></td>
+        <td id="<%= tag_name + '[is_required]' %>"></td>
+        <td id="<%= tag_name + '[allows_null]' %>"></td>
       </tr>
     <% end %>
     <tr>
@@ -78,5 +80,8 @@
 <br/>
 <br/>
 
+<% self.get_hidden_destination_fields(@definition).each do |element| %>
+  <%= raw element %>
+<% end %>
 
 <%= link_to 'Back', service_path(@service) %>
