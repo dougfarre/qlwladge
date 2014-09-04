@@ -1,0 +1,21 @@
+<%= form_for [@definition, @sync_operation], :html => {:multipart => true} do |f| %>
+  <% if @sync_operation.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@sync_operation.errors.count, "error") %> prohibited this sync_operation from being saved:</h2>
+
+      <ul>
+      <% @sync_operation.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <b>CSV Data File: </b><i><%= f.file_field :source_file %></i>
+  <%= f.hidden_field :source_file_cache %>
+
+
+  <div class="actions">
+    <%= f.submit %>
+  </div>
+<% end %>

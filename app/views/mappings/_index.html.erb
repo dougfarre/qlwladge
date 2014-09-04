@@ -1,0 +1,50 @@
+<%= form_for [service, definition], :html => {:multipart => true} do |f| %>
+  <table style="table-layout:fixed; width:100%;">
+    <tr>
+      <th style="width:20px;">Unique Header</th>
+      <th style="width:40px;">Source Header</th>
+      <th style="width:100px; text-align:left;">Destination Field</th>
+      <th style="width:100px; text-align:left;">Description</th>
+      <th style="width:50px; text-align:left;">Data Type</th>
+      <th style="width:50px; text-align:left;">Required?</th>
+      <th style="width:50px; text-align:left;">Allows Null</th>
+    </tr>
+    <% definition.mappings.each do |mapping| %>
+      <% header = mapping.source_header %>
+      <% tag_name =  'mapping[' + header + ']' %>
+      <% qualified_d_fields = self.get_qualified_destination_fields(definition) %>
+      <% selected = mapping.destination_field_id %>
+      <% options = options_from_collection_for_select(qualified_d_fields,'id', 'display_name', selected) %>
+      <tr>
+        <td style="text-align:center;">
+          <% radio_tag = 'mappings[source_key]' %>
+          <%= radio_button_tag radio_tag, mapping.id, mapping.source_key == true %>
+        </td>
+        <td style="text-align:right; padding-right:40px;">
+          <%= header %>
+        </td>
+        <td style="width:200px;">
+          <%= select_tag tag_name, options,
+            include_blank: true,
+            style: 'width:150px;' %>
+        </td>
+        <td id="<%= tag_name + '[description]' %>"></td>
+        <td id="<%= tag_name + '[data_type]' %>"></td>
+        <td id="<%= tag_name + '[is_required]' %>"></td>
+        <td id="<%= tag_name + '[allows_null]' %>"></td>
+      </tr>
+
+    <% end %>
+    <tr>
+      <td colspan=5 style="text-align:center;">
+        <div class="actions"><%= f.submit %></div>
+      </td>
+    </tr>
+  </table>
+<% end %>
+<br/>
+<br/>
+
+<% self.get_hidden_destination_fields(definition).each do |element| %>
+  <%= raw element %>
+<% end %>

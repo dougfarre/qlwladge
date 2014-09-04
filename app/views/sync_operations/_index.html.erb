@@ -1,0 +1,25 @@
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Uploaded</th>
+      <th>Has Rejects</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% sync_operations.each do |sync_operation| %>
+      <tr>
+        <td><%= sync_operation.id %>
+        <td><%= !sync_operation.response.blank?.to_s %>
+        <td><%= sync_operation.has_rejects %>
+        <td><%= link_to 'Show', sync_operation %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+
+<%= link_to 'New Sync operation', new_definition_sync_operation_path(definition) %>
+<br/>
+<br/>

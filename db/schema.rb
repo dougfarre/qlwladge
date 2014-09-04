@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140903170944) do
+ActiveRecord::Schema.define(version: 20140903224030) do
 
   create_table "definitions", force: true do |t|
     t.integer  "service_id"
@@ -87,11 +87,12 @@ ActiveRecord::Schema.define(version: 20140903170944) do
     t.integer  "definition_id"
     t.string   "name"
     t.string   "assigned_service_id"
-    t.text     "source_data"
     t.text     "response"
     t.string   "rejects_uri"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.boolean  "has_rejects"
+    t.string   "source_file"
   end
 
   create_table "users", force: true do |t|

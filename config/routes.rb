@@ -14,7 +14,7 @@ Rails.application.routes.draw do
     resources :definitions #, shallow: true
   end
 
-  resources :definitions, shallow: true do
+  resources :definitions do #, shallow: true do
     resources :destination_fields
     resources :mappings
     resources :sync_operations
