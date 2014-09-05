@@ -84,20 +84,64 @@ class Marketo < Service
     }
   end
 
-  # Class Methods
+  # TODO: decouple (model dependencies)
+  def sync(definition, sync_operation)
+    input_param = build_api_input(definition.mappings, sync_operation.source_data)
+    request_body = Hash[definition.request_parameters.map {|param|
+      [param.name, param.value] unless param.value.blank?
+    }.compact!]
+
+    request_body = request_body.merge("input" => input_param)
+    response_body = make_api_call(self.lead_address, 'post', request_body.to_json)
+    response_object = JSON.parse(response_body.to_json)
+    success_count = nil
+    rejects_count = nil
+
+    if response_object['success'] == true
+      all_results = response_body['result']
+      success_count = all_results.select{|r| r['errors'].blank? }.count
+      rejects_count = all_results.count - success_count
+    end
+
+    return {
+      assigned_service_id: response_object['requestId'],
+      response: response_body,
+      success_count: success_count,
+      reject_count: rejects_count
+    }
+  end
 
   private
 
+  def build_api_input(mappings, source_data)
+    source_data.map do |record|
+      Hash[mappings.map {|mapping|
+        if mapping.destination_field
+          [mapping.destination_field.name, record[mapping.source_header.parameterize.underscore].to_s]
+        end
+      }.compact!]
+    end
+  end
+
   def make_api_call(address, type, data=nil)
-    headers = { 'Authorization' => 'Bearer ' + self.access_token }
-    response = MarketoParty.send(type || 'get', address, headers: headers)
+    response = nil
+    headers = {
+      'Authorization' => 'Bearer ' + self.access_token,
+      'Content-Type' => 'application/json',
+      'Content-Length' => data.size.to_s
+    }
+
+    if type == 'get'
+      response = MarketoParty.send(type.to_sym, address, headers: headers)
+    elsif type == 'post'
+      response = MarketoParty.send(type.to_sym, address, headers: headers, body: data.to_s )
+    end
 
     return response unless response['success'] == false
 
     unless response['errors'].detect{|error| error['code'] == '602'}.blank?
       self.authenticate
       make_api_call(address, type, data)
-    else
       raise 'API ERROR: ' + response['errors'].to_s
     end
   end

@@ -14,7 +14,8 @@ class SyncOperationsController < ApplicationController
 
   # GET /sync_operations/new
   def new
-    @sync_operation = SyncOperation.new
+    @definition = Definition.find(params[:definition_id])
+    @sync_operation = @definition.sync_operations.build
   end
 
   # GET /sync_operations/1/edit
@@ -24,11 +25,12 @@ class SyncOperationsController < ApplicationController
   # POST /sync_operations
   # POST /sync_operations.json
   def create
+    @definition = Definition.find(params[:definition_id])
     @sync_operation = @definition.sync_operations.build(sync_operation_params)
 
     respond_to do |format|
       if @sync_operation.save
-        format.html { redirect_to definition_sync_operation_path(@sync_operation), notice: 'Sync operation was successfully created.' }
+        format.html { redirect_to definition_sync_operation_path(@definition, @sync_operation), notice: 'Sync operation was successfully created.' }
         format.json { render :show, status: :created, location: @sync_operation }
       else
         format.html { render :new }
@@ -41,8 +43,8 @@ class SyncOperationsController < ApplicationController
   # PATCH/PUT /sync_operations/1.json
   def update
     respond_to do |format|
-      if @sync_operation.update(sync_operation_params)
-        format.html { redirect_to @sync_operation, notice: 'Sync operation was successfully updated.' }
+      if @sync_operation.sync
+        format.html { redirect_to definition_sync_operation_path(@definition, @sync_operation), notice: 'Sync operation was successfully updated.' }
         format.json { render :show, status: :ok, location: @sync_operation }
       else
         format.html { render :edit }

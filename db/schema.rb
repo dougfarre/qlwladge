@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140903224030) do
+ActiveRecord::Schema.define(version: 20140904173842) do
 
   create_table "definitions", force: true do |t|
     t.integer  "service_id"
@@ -85,14 +85,17 @@ ActiveRecord::Schema.define(version: 20140903224030) do
 
   create_table "sync_operations", force: true do |t|
     t.integer  "definition_id"
-    t.string   "name"
     t.string   "assigned_service_id"
     t.text     "response"
     t.string   "rejects_uri"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.boolean  "has_rejects"
     t.string   "source_file"
+    t.integer  "record_count"
+    t.integer  "success_count"
+    t.integer  "reject_count"
+    t.string   "rejects_file"
+    t.text     "source_data"
   end
 
   create_table "users", force: true do |t|

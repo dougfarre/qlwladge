@@ -2,5 +2,5 @@
 
 <%= render 'form' %>
 
-<%= link_to 'Show', @sync_operation %> |
-<%= link_to 'Back', sync_operations_path %>
+<%= link_to 'Show', definition_sync_operation_path(@definition, @sync_operation) %> |
+<%= link_to 'Back', service_definition_path(@definition.service, @definition) %>

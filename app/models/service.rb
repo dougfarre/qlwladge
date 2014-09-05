@@ -38,6 +38,10 @@ class Service < ActiveRecord::Base
     raise "Service.get_discovery is not defined"
   end
 
+  def sync
+    raise "Service.sync is not defined"
+  end
+
   # Class methods
 
   def self.services
