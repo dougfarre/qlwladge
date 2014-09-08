@@ -13,7 +13,7 @@
     <% sync_operations.each do |sync_operation| %>
       <tr>
         <td><%= sync_operation.id %>
-        <td><%= !sync_operation.response.blank?.to_s %>
+        <td><%= !sync_operation.response.blank? %>
         <td><%= sync_operation.record_count %>
         <td><%= sync_operation.success_count %>
         <td><%= sync_operation.reject_count %>

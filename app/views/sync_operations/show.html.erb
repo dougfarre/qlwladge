@@ -1,20 +1,41 @@
 <h1>Sync Operation</h1>
 <b>File Name: </b><i><%= @sync_operation.source_file.to_s %></i>
 <br/><br/>
-<b>Record Count: </b><i><%= @sync_operation.record_count %><i/>
+<b>Record Count: </b><i><%= @sync_operation.record_count %></i>
 <br/><br/>
-<b>Success Count: </b><i><%= @sync_operation.success_count  %><i/>
+<b>Success Count: </b><i><%= @sync_operation.success_count  %></i>
 <br/><br/>
-<b>Reject Count: </b><i><%= @sync_operation.reject_count  %><i/>
+<b>Reject Count: </b><i><%= @sync_operation.reject_count  %></i>
 <br/><br/>
-<b>Rejects URI: </b><i><%= @sync_operation.rejects_uri %><i/>
+<% unless @sync_operation.response.blank? %>
+  <b>Date of Sync: </b><i><%= @sync_operation.updated_at %></i>
+<% end %>
 <br/><br/>
 
-<% if @sync_operation.response.blank? %>
-  <h2>Sample of Records to Sync</h2>
-  <p style="margin-top:-15px;">A sample of the first few records to be synced </p>
-  
-  <div style="width:100%; padding:20px; margin-top: -30px;">
+<% unless @sync_operation.response.blank? %>
+  <h2>Records to Sync</h2>
+  <p style="margin-top:-15px;">Summary table of records to be synced.</p>
+  <div id="tablecontent"></div>
+
+  <div style="width:100%; padding-bottom: 20px;">
+    <table>
+      <tr>
+        <th>Row #</th>
+        <% @definition.mappings.each do |mapping| %>
+          <% if mapping.destination_field %>
+            <th><%= mapping.destination_field.display_name%></th>
+          <% end %>
+        <% end %>
+      </tr>
+      <% @sync_operation.source_data.each_with_index do |row, i| %>
+        <tr>
+          <td><%= i + 1 %></td>
+          <% @definition.mappings.each do |mapping| %>
+            <td><%= row[mapping.source_header.parameterize.underscore.to_sym] %></td>
+          <% end %>
+        </tr>
+      <% end %>
+    </table>
     <ul>
       <li><b> <%= @definition.get_headers.join(',') %></b></li>
     </ul>
@@ -24,21 +45,32 @@
       <% end %>
     </ol>
   </div>
+
 <% else %>
-  <h2>Response Body</h2>
-  <p style="margin-top:-15px;">A sample of the first few records to be synced </p>
+<h2>Request Body</h2>
+  <p style="margin-top:-15px;">Sample of post data</p>
   
-  <div style="width:60%; padding:20px;">
-    <%= @sync_operation.sample_records %>
+  <div style="width:60%; padding-bottom:20px;">
+    <%= @sync_operation.request.to_s %>
+  </div>
+
+  <h2>Response Body</h2>
+  <p style="margin-top:-15px;">API service response for data sync</p>
+  
+  <div style="width:60%; padding-bottom:20px;">
+    <%= @sync_operation.response.to_s %>
   </div>
 <% end %>
 
 <%= form_for [@definition, @sync_operation] do |f| %>
 
-  <div class="actions">
-    <%= f.submit "Sync Data!" %>
-  </div>
+  <% if @sync_operation.response.blank? %>
+    <div class="actions">
+      <%= f.submit "Sync Data!" %>
+    </div>
+  <% end %>
 <% end %>
+
 <% if @sync_operation.reject_count.to_i > 0 %>
 <%= link_to 'Download CSV of Rejected Records', edit_definition_sync_operation_path(@definition, @sync_operation) %> |
 <br/>
@@ -47,4 +79,4 @@
 
 
 
-<%= link_to 'Back', definition_path(@definition) %>
+<%= link_to 'Back', service_definition_path(@definition.service, @definition) %>

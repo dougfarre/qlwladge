@@ -86,14 +86,13 @@ class Marketo < Service
 
   # TODO: decouple (model dependencies)
   def sync(definition, sync_operation)
-    input_param = build_api_input(definition.mappings, sync_operation.source_data)
+    input_param = self.build_api_input(definition.mappings, sync_operation.source_data)
     request_body = Hash[definition.request_parameters.map {|param|
       [param.name, param.value] unless param.value.blank?
     }.compact!]
-
     request_body = request_body.merge("input" => input_param)
     response_body = make_api_call(self.lead_address, 'post', request_body.to_json)
-    response_object = JSON.parse(response_body.to_json)
+    response_object = response_body.parsed_response
     success_count = nil
     rejects_count = nil
 
@@ -105,23 +104,25 @@ class Marketo < Service
 
     return {
       assigned_service_id: response_object['requestId'],
-      response: response_body,
+      request: request_body,
+      response: response_object,
       success_count: success_count,
       reject_count: rejects_count
     }
   end
 
-  private
-
   def build_api_input(mappings, source_data)
     source_data.map do |record|
       Hash[mappings.map {|mapping|
         if mapping.destination_field
-          [mapping.destination_field.name, record[mapping.source_header.parameterize.underscore].to_s]
+          record_key = mapping.source_header.parameterize.underscore.to_sym
+          [mapping.destination_field.name, record[record_key].to_s]
         end
       }.compact!]
     end
   end
+
+  private
 
   def make_api_call(address, type, data=nil)
     response = nil
@@ -139,10 +140,11 @@ class Marketo < Service
 
     return response unless response['success'] == false
 
-    unless response['errors'].detect{|error| error['code'] == '602'}.blank?
+    if response['errors'].detect{|error| error['code'] == '602'}.blank?
+      raise 'API ERROR: ' + response['errors'].to_s
+    else
       self.authenticate
       make_api_call(address, type, data)
-      raise 'API ERROR: ' + response['errors'].to_s
     end
   end
 

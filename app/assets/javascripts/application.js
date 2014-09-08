@@ -17,6 +17,7 @@
 //= require_tree .
 
 var DefinitionsController = Paloma.controller('Definitions');
+var SyncOperationsController = Paloma.controller('SyncOperations');
 
 DefinitionsController.prototype.show = function() {
   $("select").change(function() {
@@ -34,3 +35,19 @@ DefinitionsController.prototype.show = function() {
    $(tag_prefix + "[allows_null]']").text(d_field.allows_null);
   }).change();
 };
+
+SyncOperationsController.prototype.show = function() {
+  $(document).on('ready, page:change', function() {
+    var editableGrid = new EditableGrid("RequestInput"),
+        params = Paloma.engine._request.params,
+        grid_path = params['source_data_grid_link'] + '.json';
+
+    editableGrid.tableLoaded = function() {
+      this.renderGrid("tablecontent", "table-editor");
+    };
+
+    editableGrid.loadJSON(grid_path);
+  });
+};
+
+

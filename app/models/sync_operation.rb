@@ -4,6 +4,8 @@ class SyncOperation < ActiveRecord::Base
   mount_uploader :source_file, SourceFileUploader, one: :file_name
 
   serialize :source_data, Array
+  serialize :request, Hash
+  serialize :response, Hash
   belongs_to :definition
 
   validates_presence_of :source_file
@@ -25,20 +27,18 @@ class SyncOperation < ActiveRecord::Base
 
   def sample_records
     records = CSV.parse(self.source_file.read)
-    count = 0
+    count = 1
     sample_records = []
 
-    while count < 5 and !records[count].blank?
-      count += 1
+    while count < 6 and !records[count].blank?
       sample_records << records[count].join(';')
+      count += 1
     end
 
     sample_records
   end
 
-  def sync 
-    self.assign_attributes(self.definition.service.sync(self.definition, self))
-    binding.pry
-    self.valid?
+  def sync
+    self.update_attributes(self.definition.service.sync(self.definition, self))
   end
 end

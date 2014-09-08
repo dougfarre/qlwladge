@@ -13,7 +13,11 @@ Rails.application.routes.draw do
   resources :marketo, :controller => 'services'
 
   resources :definitions do
-    resources :sync_operations
+    resources :sync_operations do
+      member do 
+       get 'source_data_grid'
+      end
+    end
   end
 
   # Example of regular route:

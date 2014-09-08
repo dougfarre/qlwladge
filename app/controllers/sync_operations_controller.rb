@@ -1,5 +1,5 @@
 class SyncOperationsController < ApplicationController
-  before_action :set_sync_operation, only: [:show, :edit, :update, :destroy]
+  before_action :set_sync_operation, only: [:show, :edit, :update, :destroy, :source_data_grid]
 
   # GET /sync_operations
   # GET /sync_operations.json
@@ -10,6 +10,7 @@ class SyncOperationsController < ApplicationController
   # GET /sync_operations/1
   # GET /sync_operations/1.json
   def show
+    js source_data_grid_link: source_data_grid_definition_sync_operation_path(@definition, @sync_operation)
   end
 
   # GET /sync_operations/new
@@ -61,6 +62,25 @@ class SyncOperationsController < ApplicationController
       format.html { redirect_to sync_operations_url, notice: 'Sync operation was successfully destroyed.' }
       format.json { head :no_content }
     end
+  end
+
+  # Custom AJAX endpoints
+
+  def source_data_grid
+    values = @definition.service.build_api_input(@definition.mappings, @sync_operation.source_data)
+    metadata = @definition.mappings.map.with_index{|mapping| {
+      'name' => mapping.destination_field.name,
+      'label' => mapping.destination_field.display_name,
+      'datatype' => 'string', #mapping.destination_field.data_type,
+      'editable' => true
+    } if mapping.destination_field }.compact!
+
+    data = values.map.with_index{|mapped_row, i| {
+      'id' => i + 1,
+      'values' => mapped_row
+    }}
+
+    render json: {'metadata' => metadata, "data" => data}.to_json
   end
 
   private

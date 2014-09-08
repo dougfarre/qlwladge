@@ -13,3 +13,7 @@
  *= require_tree .
  *= require_self
  */
+
+table.table-editor { border-collapse: collapse; border: 1px solid #CCB; width: 800px; }
+table.table-editor td, table.table-editor th { padding: 5px; border: 1px solid #E0E0E0; }
+table.table-editor th { background: #E5E5E5; text-align: leftt; }
