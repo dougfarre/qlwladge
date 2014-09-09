@@ -7,7 +7,7 @@ class Service < ActiveRecord::Base
 
   after_initialize :assign_type
   before_validation :name_is_valid_type
-  before_save :init
+  #before_save :init
 
   validates_uniqueness_of :user_id, scope: :name
   validates_presence_of :discover_path, :lead_path, :request_parameters
@@ -59,7 +59,10 @@ class Service < ActiveRecord::Base
 
   # Validators & callbacks
   def assign_type
-    self.type ||= self.name if name_is_valid_type
+    if name_is_valid_type
+      self.type ||= self.name
+      self.becomes(self.type.constantize).init if new_record?
+    end
   end
 
   def name_is_valid_type

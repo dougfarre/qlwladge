@@ -47,6 +47,10 @@ gem 'carrierwave'
 
 # Awesome javascript organization
 gem 'paloma'
+#gem 'paloma', git: 'git://github.com/kbparagua/paloma.git', branch: 'pull/55/head:pr-55'
+  #gem 'carrierwave-video', :git => 'git://github.com/elja/carrierwave-video.git', :branch => 'patch-1'
+
+
 
 # Debugging
 gem 'pry', group: :development

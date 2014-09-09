@@ -14,8 +14,9 @@ Rails.application.routes.draw do
 
   resources :definitions do
     resources :sync_operations do
-      member do 
+      member do
        get 'source_data_grid'
+       post 'update_grid_row'
       end
     end
   end

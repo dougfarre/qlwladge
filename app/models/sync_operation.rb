@@ -21,7 +21,7 @@ class SyncOperation < ActiveRecord::Base
     }
 
     self.source_data = CSV.parse(self.source_file.read, options)
-      .collect { |row| Hash[row.collect { |c,r| [c,r] }].merge(row_number: $.) }
+      .collect { |row| Hash[row.collect { |c,r| [c,r] }] }
     self.record_count = self.source_data.count
   end
 
@@ -39,6 +39,40 @@ class SyncOperation < ActiveRecord::Base
   end
 
   def sync
-    self.update_attributes(self.definition.service.sync(self.definition, self))
+    sync_results = self.definition.service.sync(self.definition, self)
+    return self.update_attributes(sync_results) if sync_results
+
+    false
+  end
+
+  def change_source_data(old_mapped_row, new_mapped_row)
+    return false if old_mapped_row.blank? or new_mapped_row.blank?
+
+    self.source_data = self.source_data.map do |source_row|
+      new_source_row = source_row_equal_to_mapped_row(source_row, old_mapped_row, new_mapped_row)
+      new_source_row or source_row
+    end
+
+    self.save
+  end
+
+  def source_row_equal_to_mapped_row(source_row, old_mapped_row, new_mapped_row)
+    new_source_row = source_row.clone
+
+    valid_mappings = self.definition.mappings.map{|mapping|
+      mapping if mapping.destination_field
+    }.compact!
+
+    is_valid = !old_mapped_row.keys.map {|destination_field_key|
+      mapping = valid_mappings.detect{ |current_mapping|
+        current_mapping.destination_field.name == destination_field_key.to_s
+      }
+      header_key = mapping.source_header.underscore.downcase.to_sym
+      values_equal = source_row[header_key] == old_mapped_row[destination_field_key]
+      new_source_row[header_key] = new_mapped_row[destination_field_key]
+      values_equal
+    }.include?(false)
+
+    new_source_row if is_valid
   end
 end

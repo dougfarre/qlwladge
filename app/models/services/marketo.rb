@@ -73,6 +73,7 @@ class Marketo < Service
 
   def get_discovery
     discovery_fields = make_api_call(self.discovery_address, 'get')
+    return unless discovery_fields
 
     discovery_fields['result'].map { |f|
       {
@@ -91,7 +92,10 @@ class Marketo < Service
       [param.name, param.value] unless param.value.blank?
     }.compact!]
     request_body = request_body.merge("input" => input_param)
+
     response_body = make_api_call(self.lead_address, 'post', request_body.to_json)
+    return nil unless response_body
+
     response_object = response_body.parsed_response
     success_count = nil
     rejects_count = nil
@@ -128,23 +132,28 @@ class Marketo < Service
     response = nil
     headers = {
       'Authorization' => 'Bearer ' + self.access_token,
-      'Content-Type' => 'application/json',
-      'Content-Length' => data.size.to_s
+      'Content-Type' => 'application/json'
     }
+    headers.merge('Content-Length' => data.size.to_s) if data
 
-    if type == 'get'
+    if type.downcase.underscore == 'get'
       response = MarketoParty.send(type.to_sym, address, headers: headers)
     elsif type == 'post'
       response = MarketoParty.send(type.to_sym, address, headers: headers, body: data.to_s )
+    else
+      raise 'Marketo only GET and POST actions at this time.' and return
     end
 
     return response unless response['success'] == false
 
-    if response['errors'].detect{|error| error['code'] == '602'}.blank?
-      raise 'API ERROR: ' + response['errors'].to_s
-    else
+    if !response['errors'].detect{|error| error['code'] == '602'}.blank?
       self.authenticate
       make_api_call(address, type, data)
+    elsif !response['errors'].detect{|error| error['code'] == '601'}.blank?
+      errors.add(:base, 'Client keys and/or secret is invalid')
+      return nil
+    else
+      raise 'API ERROR: ' + response['errors'].to_s
     end
   end
 

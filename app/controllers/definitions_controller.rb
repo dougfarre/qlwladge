@@ -1,5 +1,5 @@
 class DefinitionsController < ApplicationController
-  before_action :set_definition, only: [:show, :edit, :update, :destroy]
+  before_action :set_definition, only: [:show, :edit, :destroy, :update]
 
   # GET /definitions/1
   # GET /definitions/1.json
@@ -21,14 +21,17 @@ class DefinitionsController < ApplicationController
   def create
     @service = Service.find(params[:service_id])
     @definition = @service.definitions.build(definition_params)
+
     @definition.destination_fields = build_destination_fields
+    redirect_to edit_service_path(@service) unless @definition.destination_fields
+
     @definition.mappings = build_mappings
+    redirect_to edit_service_definition_path(@service, @definition) unless @definition.mappings
 
     request_value_parameters.each do |key, value|
       request_parameter = @definition.request_parameters.find {|param| param[:name] == key}
       request_parameter.value = value
     end
-
 
     respond_to do |format|
       if @definition.save
@@ -74,7 +77,9 @@ class DefinitionsController < ApplicationController
 
   # Never trust parameters from the scary internet, only allow the white list through.
   def definition_params
-    params.permit(definition: [:description, :source_file, :source_file_cache ])
+    #params.permit(definition: [:description, :source_file, :source_file_cache ])
+    #fi:c
+    params.require(:definition).permit(:description, :source_file, :source_file_cache) rescue nil
   end
 
   def request_value_parameters
@@ -87,12 +92,12 @@ class DefinitionsController < ApplicationController
   end
 
   def mappings_params
-    params.require(:mappings).permit(:source_key)
+    params.require(:mappings).permit(:source_key) rescue nil
   end
 
   # Do any additional processing here (like standardizing the data type)
   def build_destination_fields
-    @service.get_discovery.map{|f| DestinationField.new(f) }
+    @service.get_discovery.map{|f| DestinationField.new(f) } rescue nil
   end
 
   def build_mappings
@@ -116,7 +121,6 @@ class DefinitionsController < ApplicationController
       mapping = @definition.mappings.detect{|x| x.source_header == header}
       mapping.destination_field_id = destination_field_id
     end
-    binding.pry
 
     unless mappings_params.blank?
       mapping_id = mappings_params['source_key'].to_i
