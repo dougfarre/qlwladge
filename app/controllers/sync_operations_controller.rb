@@ -51,7 +51,7 @@ class SyncOperationsController < ApplicationController
         format.html { redirect_to definition_sync_operation_path(@definition, @sync_operation), notice: 'Sync operation was successfully updated.' }
         format.json { render :show, status: :ok, location: @sync_operation }
       else
-        format.html { redirect_to edit_service_path(@definition.service), notice: @definition.service.errors[:base] }
+        format.html { redirect_to edit_service_path(@definition.service), notice: @definition.service.auth_error }
         format.json { render json: @sync_operation.errors, status: :unprocessable_entity }
       end
     end
@@ -71,6 +71,7 @@ class SyncOperationsController < ApplicationController
 
   def source_data_grid
     editable = @sync_operation.response.blank?
+    binding.pry
     values = @definition.service.build_api_input(@definition.mappings, @sync_operation.source_data)
     status = ''
 
@@ -128,5 +129,5 @@ class SyncOperationsController < ApplicationController
     boolean_array = comparison_row.keys.map{|key| comparison_row[key] == current_row[key]}
     !boolean_array.include? false
   end
-  
+
 end

@@ -150,7 +150,9 @@ class Marketo < Service
       self.authenticate
       make_api_call(address, type, data)
     elsif !response['errors'].detect{|error| error['code'] == '601'}.blank?
-      errors.add(:base, 'Client keys and/or secret is invalid')
+      message = 'Client keys and/or secret is invalid'
+      errors.add(:base, message )
+      self.update_attribute(:auth_error, message)
       return nil
     else
       raise 'API ERROR: ' + response['errors'].to_s

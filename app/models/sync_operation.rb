@@ -14,6 +14,7 @@ class SyncOperation < ActiveRecord::Base
 
   def process_source
     return unless new_record?
+    additional_attributes = {'status' => 'new', 'assigned_entity_id' => ''}
     options = {
       headers: true,
       header_converters: :symbol,
@@ -21,7 +22,7 @@ class SyncOperation < ActiveRecord::Base
     }
 
     self.source_data = CSV.parse(self.source_file.read, options)
-      .collect { |row| Hash[row.collect { |c,r| [c,r] }] }
+      .collect { |row| Hash[row.collect { |c,r| [c,r] }].merge(additional_attributes)}
     self.record_count = self.source_data.count
   end
 
@@ -38,11 +39,22 @@ class SyncOperation < ActiveRecord::Base
     sample_records
   end
 
+  # return true/false
   def sync
     sync_results = self.definition.service.sync(self.definition, self)
-    return self.update_attributes(sync_results) if sync_results
+    return false unless sync_results
+    crud_results = sync_results[:response]['result']
+    raise 'Record count mismatch.' if crud_results.count != self.source_data.count
 
-    false
+    self.source_data = self.source_data.map.with_index do |row, i|
+      row['assigned_entity_id'] = crud_results[i]['id'].to_s unless crud_results[i]['id'].blank?
+      row['status'] = crud_results[i]['status'] unless !crud_results[i]['status'].blank?
+      row
+    end
+
+    binding.pry
+
+    self.update_attributes(sync_results) && self.save if sync_results
   end
 
   def change_source_data(old_mapped_row, new_mapped_row)

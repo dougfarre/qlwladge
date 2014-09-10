@@ -15,27 +15,15 @@
 <% if @sync_operation.response.blank? %>
   <h2>Records to Sync</h2>
   <p style="margin-top:-15px;">Summary table of records to be synced.</p>
-  <div id="tablecontent"></div>
-  <br/>
 <% else %>
-<h2>Synced Record Status</h2>
-  <p style="margin-top:-15px;">Sample of post data</p>
-  <div id="tablecontent"></div>
-
-  <!-- div style="width:60%; padding-bottom:20px;">
-    <%= @sync_operation.request.to_s %>
-  </div-->
-
-  <h2>Response Body</h2>
-  <p style="margin-top:-15px;">API service response for data sync</p>
-
-  <div style="width:60%; padding-bottom:20px;">
-    <%= @sync_operation.response.to_s %>
-  </div>
+  <h2>Synced Record Status</h2>
+  <p style="margin-top:-15px;">Synced record status.</p>
 <% end %>
 
-<%= form_for [@definition, @sync_operation] do |f| %>
+<div id="tablecontent"></div>
+<br/>
 
+<%= form_for [@definition, @sync_operation] do |f| %>
   <% if @sync_operation.response.blank? %>
     <div class="actions">
       <%= f.submit "Sync Data!" %>
