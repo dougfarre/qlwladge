@@ -46,13 +46,16 @@ gem 'httparty'
 gem 'carrierwave'
 
 # Awesome javascript organization
-gem 'paloma'
+gem 'paloma', :git => 'http://github.com/jritter/paloma.git'
 
 # Debugging
 gem 'pry', group: :development
 
 # OAuth2 Client
 gem 'oauth2'
+
+# Database
+gem 'pg', group: :production
 
 # Use ActiveModel has_secure_password
 # gem 'bcrypt', '~> 3.1.7'
