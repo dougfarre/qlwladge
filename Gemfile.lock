@@ -1,3 +1,10 @@
+GIT
+  remote: http://github.com/jritter/paloma.git
+  revision: a0ed76fc98e2586a7eb836a5bd5e742250ca85cc
+  specs:
+    paloma (4.1.0)
+      jquery-rails
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -73,8 +80,6 @@ GEM
     multi_json (1.10.1)
     multi_xml (0.5.5)
     orm_adapter (0.5.0)
-    paloma (4.1.0)
-      jquery-rails
     pg (0.17.1)
     polyglot (0.3.5)
     pry (0.10.1)
@@ -155,7 +160,7 @@ DEPENDENCIES
   httparty
   jbuilder (~> 2.0)
   jquery-rails
-  paloma
+  paloma!
   pg
   pry
   rails (= 4.1.4)
