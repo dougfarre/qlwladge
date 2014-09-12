@@ -7,4 +7,4 @@ parameters:
 
   lookupField:
     description: 'If specified, will use this attribute to find the duplicate'
-    default: '' 
+    default: ''

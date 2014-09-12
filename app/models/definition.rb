@@ -23,7 +23,7 @@ class Definition < ActiveRecord::Base
         self.request_parameters.build(
           name: param_key,
           description: params[param_key]['description'],
-          default: params[param_key]['optional']
+          default: params[param_key]['default']
         )
       end
     end
