@@ -52,8 +52,6 @@ class SyncOperation < ActiveRecord::Base
       row
     end
 
-    binding.pry
-
     self.update_attributes(sync_results) && self.save if sync_results
   end
 

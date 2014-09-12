@@ -71,7 +71,6 @@ class SyncOperationsController < ApplicationController
 
   def source_data_grid
     editable = @sync_operation.response.blank?
-    binding.pry
     values = @definition.service.build_api_input(@definition.mappings, @sync_operation.source_data)
     status = ''
 
