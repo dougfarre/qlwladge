@@ -47,7 +47,16 @@ SyncOperationsController.prototype.show = function() {
       this.renderGrid("tablecontent", "table-editor");
     };
 
-    editableGrid.loadJSON(getGridPath);
+    $.ajax({
+      url: getGridPath,
+      contentType: "application/json",
+      cache: false,
+      success: function (result) {
+        console.log(result);
+        editableGrid.load(result);
+        editableGrid.tableLoaded();
+      }
+    });
 
     editableGrid.modelChanged = function(rowIndex, columnIndex, oldValue) {
       var newRow = this.getRowValues(rowIndex),
