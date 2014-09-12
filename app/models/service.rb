@@ -1,6 +1,8 @@
 class Service < ActiveRecord::Base
   attr_accessor :custom_domain
   attr_accessor :custom_client_id, :custom_client_secret
+  attr_accessor :app_client_id, :app_client_secret
+  attr_accessor :username, :password
 
   belongs_to :user
   has_many :definitions

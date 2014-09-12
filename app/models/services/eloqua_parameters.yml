@@ -1,0 +1,15 @@
+# Marketo lead request parameters
+
+parameters:
+  action:
+    description: 'Possible values: createOnly, updateOnly, createOrUpdate, createDuplicate'
+    optional: true
+
+  lookupField:
+    description: 'If specified, will use this attribute to find the duplicate'
+    optional: false 
+
+  input:
+    description: 'Array of lead records to create or update'
+    optional: true
+

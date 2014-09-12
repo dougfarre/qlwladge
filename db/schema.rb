@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140905160631) do
+ActiveRecord::Schema.define(version: 20140910062519) do
 
   create_table "definitions", force: true do |t|
     t.integer  "service_id"
@@ -81,6 +81,7 @@ ActiveRecord::Schema.define(version: 20140905160631) do
     t.string   "discover_path"
     t.string   "lead_path"
     t.text     "request_parameters"
+    t.string   "site_name"
   end
 
   create_table "sync_operations", force: true do |t|

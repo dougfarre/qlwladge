@@ -15,6 +15,7 @@ class ServicesController < ApplicationController
   # GET /services/new
   def new
     @service = Service.new(name: service_params[:name])
+    this is where the redirect goes!
   end
 
   # GET /services/1/edit
@@ -64,6 +65,10 @@ class ServicesController < ApplicationController
       format.html { redirect_to services_url, notice: 'Service was successfully destroyed.' }
       format.json { head :no_content }
     end
+  end
+
+  def oauth2_callback
+
   end
 
   private
