@@ -46,7 +46,7 @@ gem 'httparty'
 gem 'carrierwave'
 
 # Awesome javascript organization
-gem 'paloma'
+gem 'paloma', :git => 'http://github.com/jritter/paloma.git'
 
 # Debugging
 gem 'pry', group: :development
