@@ -209,6 +209,5 @@ class Eloqua < Service
       site: self.auth_domain
     )
   end
-  end
 end
 
