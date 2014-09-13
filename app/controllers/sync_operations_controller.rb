@@ -81,25 +81,28 @@ class SyncOperationsController < ApplicationController
     }] + @definition.mappings.map.with_index{|mapping| {
       'name' => mapping.destination_field.name,
       'label' => mapping.destination_field.display_name,
-      'datatype' => 'string', #mapping.destination_field.data_type,
+      'datatype' => mapping.destination_field.data_type,
       'editable' => editable
     } if mapping.destination_field }.compact!
 
     data = values.map.with_index{|mapped_row, i| {
       'id' => i + 1,
-      'values' => mapped_row.merge({'status' => status})
+      'values' => mapped_row.merge({status: status})
     }}
 
     render json: {'metadata' => metadata, "data" => data}.to_json
   end
 
   def update_grid_row
-    status = 'error'
     mapped_data = @definition.service.build_api_input(@definition.mappings, @sync_operation.source_data)
     old_mapped_row = get_mapped_row(mapped_data)
     new_mapped_row = grid_row_params['new_row']
-    status = 'ok' if @sync_operation.change_source_data(old_mapped_row, new_mapped_row)
-    render plain: status
+
+    if @sync_operation.change_source_data(old_mapped_row, new_mapped_row)
+      render json: { success: "true" }
+    else
+      render json: { success: "false", message: 'fail' }
+    end
   end
 
   private
@@ -120,12 +123,12 @@ class SyncOperationsController < ApplicationController
 
   def get_mapped_row(mapped_data)
     mapped_data.detect do |current_row|
-        grid_row_params['old_row'] if row_compare(current_row, grid_row_params['old_row'].except!('status'))
+        grid_row_params['old_row'] if row_compare(current_row, grid_row_params['old_row'].except!(:status))
     end
   end
 
   def row_compare(current_row, comparison_row)
-    boolean_array = comparison_row.keys.map{|key| comparison_row[key] == current_row[key]}
+    boolean_array = comparison_row.keys.map{|key| comparison_row[key].to_s == current_row[key].to_s}
     !boolean_array.include? false
   end
 

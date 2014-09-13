@@ -1,6 +1,7 @@
 GIT
-  remote: http://github.com/jritter/paloma.git
-  revision: a0ed76fc98e2586a7eb836a5bd5e742250ca85cc
+  remote: http://github.com/dougfarre/paloma.git
+  revision: 4293b3120c632a216a3590cba65b5824366a8556
+  branch: 4.0
   specs:
     paloma (4.1.0)
       jquery-rails

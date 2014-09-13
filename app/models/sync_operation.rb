@@ -14,7 +14,7 @@ class SyncOperation < ActiveRecord::Base
 
   def process_source
     return unless new_record?
-    additional_attributes = {'status' => 'new', 'assigned_entity_id' => ''}
+    additional_attributes = {status: 'new', assigned_entity_id: ''}
     options = {
       headers: true,
       header_converters: :symbol,
@@ -22,7 +22,7 @@ class SyncOperation < ActiveRecord::Base
     }
 
     self.source_data = CSV.parse(self.source_file.read, options)
-      .collect { |row| Hash[row.collect { |c,r| [c,r] }].merge(additional_attributes)}
+      .collect { |row| Hash[row.collect { |c,r| [c,r.to_s] }].merge(additional_attributes)}
     self.record_count = self.source_data.count
   end
 
@@ -47,8 +47,8 @@ class SyncOperation < ActiveRecord::Base
     raise 'Record count mismatch.' if crud_results.count != self.source_data.count
 
     self.source_data = self.source_data.map.with_index do |row, i|
-      row['assigned_entity_id'] = crud_results[i]['id'].to_s unless crud_results[i]['id'].blank?
-      row['status'] = crud_results[i]['status'] unless !crud_results[i]['status'].blank?
+      row[:assigned_entity_id] = crud_results[i]['id'].to_s unless crud_results[i]['id'].blank?
+      row[:status] = crud_results[i]['status'] unless !crud_results[i]['status'].blank?
       row
     end
 
@@ -57,32 +57,34 @@ class SyncOperation < ActiveRecord::Base
 
   def change_source_data(old_mapped_row, new_mapped_row)
     return false if old_mapped_row.blank? or new_mapped_row.blank?
+    update_made = false
 
-    self.source_data = self.source_data.map do |source_row|
+    source_data = self.source_data.map do |source_row|
+      next source_row if update_made
       new_source_row = source_row_equal_to_mapped_row(source_row, old_mapped_row, new_mapped_row)
+      update_made = true if new_source_row
       new_source_row or source_row
     end
 
-    self.save
+    self.update_column(:source_data, source_data)
   end
 
   def source_row_equal_to_mapped_row(source_row, old_mapped_row, new_mapped_row)
-    new_source_row = source_row.clone
-
     valid_mappings = self.definition.mappings.map{|mapping|
       mapping if mapping.destination_field
     }.compact!
 
-    is_valid = !old_mapped_row.keys.map {|destination_field_key|
+    !old_mapped_row.keys.each { |destination_field_key|
       mapping = valid_mappings.detect{ |current_mapping|
         current_mapping.destination_field.name == destination_field_key.to_s
       }
-      header_key = mapping.source_header.underscore.downcase.to_sym
-      values_equal = source_row[header_key] == old_mapped_row[destination_field_key]
-      new_source_row[header_key] = new_mapped_row[destination_field_key]
-      values_equal
-    }.include?(false)
 
-    new_source_row if is_valid
+      header_key = mapping.source_header.parameterize.downcase.underscore.to_sym
+      values_equal = source_row[header_key].to_s == old_mapped_row[destination_field_key].to_s
+      return unless values_equal
+      source_row[header_key] = new_mapped_row[destination_field_key]
+    }
+
+    source_row
   end
 end
