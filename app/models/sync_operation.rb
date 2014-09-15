@@ -20,7 +20,6 @@ class SyncOperation < ActiveRecord::Base
     sync_results = self.definition.service.sync(self.definition, self)
     return false unless sync_results
     crud_results = sync_results[:response]['result']
-    binding.pry
     raise 'Record count mismatch.' if crud_results.count != self.mapped_data.count
 
     self.update_attributes(sync_results.merge({
