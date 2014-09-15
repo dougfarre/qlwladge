@@ -58,7 +58,6 @@ class SyncOperation < ActiveRecord::Base
   def process
     return unless new_record?
     process_from_mapped and return unless self.mapped_data.blank?
-    binding.pry
     process_from_source
   end
 
