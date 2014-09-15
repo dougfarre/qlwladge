@@ -41,6 +41,10 @@ class Service < ActiveRecord::Base
   def sync
     raise "Service.sync is not defined"
   end
+  
+  def map_data(mappings, source_data)
+    raise "Service.build_data_map is not defined"
+  end
 
   # Class methods
 

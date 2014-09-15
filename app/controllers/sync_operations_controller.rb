@@ -71,12 +71,21 @@ class SyncOperationsController < ApplicationController
 
   def source_data_grid
     editable = @sync_operation.response.blank?
-    values = @definition.service.build_api_input(@definition.mappings, @sync_operation.source_data)
-    status = ''
+    values = @sync_operation.mapped_data
 
     metadata = [{
+      'name' => 'id',
+      'label' => '#',
+      'editable' => false
+      },
+      {
       'name' => 'status',
       'label' => 'Status',
+      'editable' => false
+    },
+    {
+      'name' => 'assigned_entity_id',
+      'label' => 'EntityID',
       'editable' => false
     }] + @definition.mappings.map.with_index{|mapping| {
       'name' => mapping.destination_field.name,
@@ -85,20 +94,19 @@ class SyncOperationsController < ApplicationController
       'editable' => editable
     } if mapping.destination_field }.compact!
 
-    data = values.map.with_index{|mapped_row, i| {
-      'id' => i + 1,
-      'values' => mapped_row.merge({status: status})
+    data = values.map{|mapped_row| {
+      'id' => mapped_row['id'],
+      'values' => mapped_row
     }}
 
     render json: {'metadata' => metadata, "data" => data}.to_json
   end
 
   def update_grid_row
-    mapped_data = @definition.service.build_api_input(@definition.mappings, @sync_operation.source_data)
-    old_mapped_row = get_mapped_row(mapped_data)
+    old_mapped_row = grid_row_params['old_row']
     new_mapped_row = grid_row_params['new_row']
 
-    if @sync_operation.change_source_data(old_mapped_row, new_mapped_row)
+    if @sync_operation.update_mapped_data(old_mapped_row, new_mapped_row)
       render json: { success: "true" }
     else
       render json: { success: "false", message: 'fail' }
@@ -120,16 +128,4 @@ class SyncOperationsController < ApplicationController
   def grid_row_params
     params.require(:grid_row).permit!
   end
-
-  def get_mapped_row(mapped_data)
-    mapped_data.detect do |current_row|
-        grid_row_params['old_row'] if row_compare(current_row, grid_row_params['old_row'].except!(:status))
-    end
-  end
-
-  def row_compare(current_row, comparison_row)
-    boolean_array = comparison_row.keys.map{|key| comparison_row[key].to_s == current_row[key].to_s}
-    !boolean_array.include? false
-  end
-
 end

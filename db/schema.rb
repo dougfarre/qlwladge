@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140912195440) do
+ActiveRecord::Schema.define(version: 20140913053036) do
 
   create_table "definitions", force: true do |t|
     t.integer  "service_id"
@@ -99,6 +99,7 @@ ActiveRecord::Schema.define(version: 20140912195440) do
     t.string   "rejects_file"
     t.text     "source_data"
     t.text     "request"
+    t.text     "mapped_data"
   end
 
   create_table "users", force: true do |t|

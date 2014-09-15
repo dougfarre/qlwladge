@@ -87,7 +87,7 @@ class Marketo < Service
 
   # TODO: decouple (model dependencies)
   def sync(definition, sync_operation)
-    input_param = self.build_api_input(definition.mappings, sync_operation.source_data)
+    input_param = self.map_data(definition.mappings, sync_operation.source_data)
     request_body = Hash[definition.request_parameters.map {|param|
       [param.name, param.value] unless param.value.blank?
     }.compact!]
@@ -115,14 +115,18 @@ class Marketo < Service
     }
   end
 
-  def build_api_input(mappings, source_data)
-    source_data.map do |record|
+  def map_data(mappings, source_data)
+    source_data.map.with_index do |record, i|
       Hash[mappings.map {|mapping|
         if mapping.destination_field
           record_key = mapping.source_header.parameterize.underscore.to_sym
           [mapping.destination_field.name, record[record_key].to_s]
         end
-      }.compact!]
+      }.compact!].merge({
+        'id' => i + 1,
+        'status' => 'new',
+        'assigned_entity_id' => ''
+      })
     end
   end
 
