@@ -1,3 +1,5 @@
+require 'tempfile'
+
 class SyncOperationsController < ApplicationController
   before_action :set_sync_operation, 
     only: [:show, :edit, :update, :destroy, :source_data_grid, :update_grid_row]
@@ -30,6 +32,14 @@ class SyncOperationsController < ApplicationController
   def create
     @definition = Definition.find(params[:definition_id])
     @sync_operation = @definition.sync_operations.build(sync_operation_params)
+
+    if sync_operation_params[:copied_from]
+      previous_op = SyncOperation.find(sync_operation_params[:copied_from])
+      @sync_operation = @definition.sync_operations.build({
+        source_file: Tempfile.new(SecureRandom.uuid),
+        mapped_data: previous_op.mapped_data.select{|m| m['assigned_entity_id'].blank?}
+      })
+    end
 
     respond_to do |format|
       if @sync_operation.save
@@ -74,18 +84,23 @@ class SyncOperationsController < ApplicationController
     values = @sync_operation.mapped_data
 
     metadata = [{
-      'name' => 'id',
+      'name' => 'tmp_id',
       'label' => '#',
       'editable' => false
       },
       {
-      'name' => 'status',
+      'name' => 'sync_status',
       'label' => 'Status',
       'editable' => false
     },
     {
       'name' => 'assigned_entity_id',
       'label' => 'EntityID',
+      'editable' => false
+    },
+    {
+      'name' => 'sync_details',
+      'label' => 'SyncDetails',
       'editable' => false
     }] + @definition.mappings.map.with_index{|mapping| {
       'name' => mapping.destination_field.name,
@@ -95,7 +110,7 @@ class SyncOperationsController < ApplicationController
     } if mapping.destination_field }.compact!
 
     data = values.map{|mapped_row| {
-      'id' => mapped_row['id'],
+      'id' => mapped_row['tmp_id'],
       'values' => mapped_row
     }}
 
@@ -122,7 +137,7 @@ class SyncOperationsController < ApplicationController
 
   # Never trust parameters from the scary internet, only allow the white list through.
   def sync_operation_params
-    params.require(:sync_operation).permit([:source_file, :source_file_cache ])
+    params.require(:sync_operation).permit([:source_file, :source_file_cache, :copied_from])
   end
 
   def grid_row_params

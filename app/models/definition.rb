@@ -9,9 +9,10 @@ class Definition < ActiveRecord::Base
   has_many :sync_operations
   belongs_to :service
 
-  after_initialize :build_request_parameters
   validates_presence_of :description, :source_file
   validates_uniqueness_of :description
+
+  after_initialize :build_request_parameters
 
   def build_request_parameters
     params = JSON.parse self.service.request_parameters rescue raise 'Request parameters not defined.'

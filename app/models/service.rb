@@ -55,6 +55,11 @@ class Service < ActiveRecord::Base
     ['Eloqua', 'Marketo']
   end
 
+  #make this hash that describes data type and mapped_to_id
+  def self.excluded_meta_attrs
+    ['tmp_id', 'assigned_entity_id', 'sync_status', 'sync_details']
+  end
+
   private
 
   def make_api_call(type, address, data)
