@@ -11,8 +11,8 @@
       <tr>
         <td><%= definition.description %></td>
         <td><%= link_to 'Show', service_definition_path(@service, definition) %></td>
-        <td><%= link_to 'Edit', edit_definition_path(definition) %></td>
-        <td><%= link_to 'Destroy', definition, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+        <td><%= link_to 'Edit', edit_service_definition_path(@service, definition) %></td>
+        <td><%= link_to 'Destroy', [@service, definition], method: :delete, data: { confirm: 'Are you sure?' } %></td>
       </tr>
     <% end %>
   </tbody>

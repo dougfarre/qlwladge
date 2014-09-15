@@ -1,3 +1,5 @@
+require 'tempfile'
+
 class SyncOperationsController < ApplicationController
   before_action :set_sync_operation, 
     only: [:show, :edit, :update, :destroy, :source_data_grid, :update_grid_row]
@@ -30,6 +32,14 @@ class SyncOperationsController < ApplicationController
   def create
     @definition = Definition.find(params[:definition_id])
     @sync_operation = @definition.sync_operations.build(sync_operation_params)
+
+    if sync_operation_params[:copied_from]
+      previous_op = SyncOperation.find(sync_operation_params[:copied_from])
+      @sync_operation = @definition.sync_operations.build({
+        source_file: Tempfile.new(SecureRandom.uuid),
+        mapped_data: previous_op.mapped_data.select{|m| m['assigned_entity_id'].blank?}
+      })
+    end
 
     respond_to do |format|
       if @sync_operation.save
@@ -71,35 +81,51 @@ class SyncOperationsController < ApplicationController
 
   def source_data_grid
     editable = @sync_operation.response.blank?
-    values = @definition.service.build_api_input(@definition.mappings, @sync_operation.source_data)
-    status = ''
+    values = @sync_operation.mapped_data
 
     metadata = [{
-      'name' => 'status',
+      'name' => 'tmp_id',
+      'label' => '#',
+      'editable' => false
+      },
+      {
+      'name' => 'sync_status',
       'label' => 'Status',
+      'editable' => false
+    },
+    {
+      'name' => 'assigned_entity_id',
+      'label' => 'EntityID',
+      'editable' => false
+    },
+    {
+      'name' => 'sync_details',
+      'label' => 'SyncDetails',
       'editable' => false
     }] + @definition.mappings.map.with_index{|mapping| {
       'name' => mapping.destination_field.name,
       'label' => mapping.destination_field.display_name,
-      'datatype' => 'string', #mapping.destination_field.data_type,
+      'datatype' => mapping.destination_field.data_type,
       'editable' => editable
     } if mapping.destination_field }.compact!
 
-    data = values.map.with_index{|mapped_row, i| {
-      'id' => i + 1,
-      'values' => mapped_row.merge({'status' => status})
+    data = values.map{|mapped_row| {
+      'id' => mapped_row['tmp_id'],
+      'values' => mapped_row
     }}
 
     render json: {'metadata' => metadata, "data" => data}.to_json
   end
 
   def update_grid_row
-    status = 'error'
-    mapped_data = @definition.service.build_api_input(@definition.mappings, @sync_operation.source_data)
-    old_mapped_row = get_mapped_row(mapped_data)
+    old_mapped_row = grid_row_params['old_row']
     new_mapped_row = grid_row_params['new_row']
-    status = 'ok' if @sync_operation.change_source_data(old_mapped_row, new_mapped_row)
-    render plain: status
+
+    if @sync_operation.update_mapped_data(old_mapped_row, new_mapped_row)
+      render json: { success: "true" }
+    else
+      render json: { success: "false", message: 'fail' }
+    end
   end
 
   private
@@ -111,22 +137,10 @@ class SyncOperationsController < ApplicationController
 
   # Never trust parameters from the scary internet, only allow the white list through.
   def sync_operation_params
-    params.require(:sync_operation).permit([:source_file, :source_file_cache ])
+    params.require(:sync_operation).permit([:source_file, :source_file_cache, :copied_from])
   end
 
   def grid_row_params
     params.require(:grid_row).permit!
   end
-
-  def get_mapped_row(mapped_data)
-    mapped_data.detect do |current_row|
-        grid_row_params['old_row'] if row_compare(current_row, grid_row_params['old_row'].except!('status'))
-    end
-  end
-
-  def row_compare(current_row, comparison_row)
-    boolean_array = comparison_row.keys.map{|key| comparison_row[key] == current_row[key]}
-    !boolean_array.include? false
-  end
-
 end

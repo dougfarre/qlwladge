@@ -52,7 +52,6 @@ SyncOperationsController.prototype.show = function() {
       contentType: "application/json",
       cache: false,
       success: function (result) {
-        console.log(result);
         editableGrid.load(result);
         editableGrid.tableLoaded();
       }
@@ -75,8 +74,13 @@ SyncOperationsController.prototype.show = function() {
         dataType: "text",
         contentType: "application/json",
         data: data,
-        success: function(response) {
-          if (response !== "ok") { editableGrid.setValueAt(rowIndex, columnIndex, oldValue); }
+        success: function(resp) {
+          var response = JSON3.parse(resp);
+          if (response['success'] !== 'true') {
+            editableGrid.setValueAt(rowIndex, columnIndex, oldValue); 
+            console.log(response);
+            alert(response['message']);
+          }
         },
         error: function(XMLHttpRequest, textStatus, exception) {
           alert(XMLHttpRequest.responseText);

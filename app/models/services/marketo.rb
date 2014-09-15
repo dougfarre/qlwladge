@@ -87,7 +87,11 @@ class Marketo < Service
 
   # TODO: decouple (model dependencies)
   def sync(definition, sync_operation)
-    input_param = self.build_api_input(definition.mappings, sync_operation.source_data)
+    input_param = sync_operation.mapped_data.map do |row|
+      Service.excluded_meta_attrs.each{|attr| row.delete(attr)}
+      row
+    end
+
     request_body = Hash[definition.request_parameters.map {|param|
       [param.name, param.value] unless param.value.blank?
     }.compact!]
@@ -102,7 +106,7 @@ class Marketo < Service
 
     if response_object['success'] == true
       all_results = response_body['result']
-      success_count = all_results.select{|r| r['errors'].blank? }.count
+      success_count = all_results.select{|r| !r['id'].blank? }.count
       rejects_count = all_results.count - success_count
     end
 
@@ -115,14 +119,19 @@ class Marketo < Service
     }
   end
 
-  def build_api_input(mappings, source_data)
-    source_data.map do |record|
+  def map_data(mappings, source_data)
+    source_data.map.with_index do |record, i|
       Hash[mappings.map {|mapping|
         if mapping.destination_field
           record_key = mapping.source_header.parameterize.underscore.to_sym
           [mapping.destination_field.name, record[record_key].to_s]
         end
-      }.compact!]
+      }.compact!].merge({
+        'tmp_id' => i + 1,
+        'assigned_entity_id' => '',
+        'sync_status' => 'new',
+        'sync_details' => ''
+      })
     end
   end
 

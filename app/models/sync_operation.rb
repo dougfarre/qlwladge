@@ -3,86 +3,78 @@ require 'csv'
 class SyncOperation < ActiveRecord::Base
   mount_uploader :source_file, SourceFileUploader, one: :file_name
 
+  attr_accessor :copied_from
+
   serialize :source_data, Array
+  serialize :mapped_data, Array
   serialize :request, Hash
   serialize :response, Hash
   belongs_to :definition
 
   validates_presence_of :source_file
 
-  before_save :process_source
-
-  def process_source
-    return unless new_record?
-    additional_attributes = {'status' => 'new', 'assigned_entity_id' => ''}
-    options = {
-      headers: true,
-      header_converters: :symbol,
-      converters: :all
-    }
-
-    self.source_data = CSV.parse(self.source_file.read, options)
-      .collect { |row| Hash[row.collect { |c,r| [c,r] }].merge(additional_attributes)}
-    self.record_count = self.source_data.count
-  end
-
-  def sample_records
-    records = CSV.parse(self.source_file.read)
-    count = 1
-    sample_records = []
-
-    while count < 6 and !records[count].blank?
-      sample_records << records[count].join(';')
-      count += 1
-    end
-
-    sample_records
-  end
+  before_save :process
 
   # return true/false
   def sync
     sync_results = self.definition.service.sync(self.definition, self)
     return false unless sync_results
     crud_results = sync_results[:response]['result']
-    raise 'Record count mismatch.' if crud_results.count != self.source_data.count
+    raise 'Record count mismatch.' if crud_results.count != self.mapped_data.count
 
-    self.source_data = self.source_data.map.with_index do |row, i|
-      row['assigned_entity_id'] = crud_results[i]['id'].to_s unless crud_results[i]['id'].blank?
-      row['status'] = crud_results[i]['status'] unless !crud_results[i]['status'].blank?
-      row
-    end
-
-    self.update_attributes(sync_results) && self.save if sync_results
+    self.update_attributes(sync_results.merge({
+      mapped_data: self.mapped_data.map.with_index{ |row, i|
+        row['assigned_entity_id'] = crud_results[i]['id'].to_s unless crud_results[i]['id'].blank?
+        row['sync_status'] = crud_results[i]['status'] unless crud_results[i]['status'].blank?
+        row['sync_details'] = crud_results[i]['reasons'].map{|r| r['message']}.join(', ') unless crud_results[i]['reasons'].blank?
+        row
+    }}))
   end
 
-  def change_source_data(old_mapped_row, new_mapped_row)
-    return false if old_mapped_row.blank? or new_mapped_row.blank?
+  def update_mapped_data(old_row, new_row)
+    return false if old_row.blank? or new_row.blank?
+    update_made = false
 
-    self.source_data = self.source_data.map do |source_row|
-      new_source_row = source_row_equal_to_mapped_row(source_row, old_mapped_row, new_mapped_row)
-      new_source_row or source_row
-    end
-
-    self.save
+    self.update_column(:mapped_data, self.mapped_data.map{ |current_row|
+      next current_row if update_made
+      replacement_row = build_replacement_row(current_row, old_row, new_row)
+      update_made = true if replacement_row
+      replacement_row or current_row
+    })
   end
 
-  def source_row_equal_to_mapped_row(source_row, old_mapped_row, new_mapped_row)
-    new_source_row = source_row.clone
+  private
 
-    valid_mappings = self.definition.mappings.map{|mapping|
-      mapping if mapping.destination_field
-    }.compact!
+  def build_replacement_row(current_row, old_row, new_row)
+    old_row.keys.each { |key|
+      next if Service.excluded_meta_attrs.include? key
+      return unless current_row[key].to_s == old_row[key].to_s
+      current_row[key] = new_row[key]
+    }
+    current_row
+  end
 
-    is_valid = !old_mapped_row.keys.map {|destination_field_key|
-      mapping = valid_mappings.detect{ |current_mapping|
-        current_mapping.destination_field.name == destination_field_key.to_s
-      }
-      header_key = mapping.source_header.underscore.downcase.to_sym
-      values_equal = source_row[header_key] == old_mapped_row[destination_field_key]
-      new_source_row[header_key] = new_mapped_row[destination_field_key]
-      values_equal
-    }.include?(false)
+  def process
+    return unless new_record?
+    process_from_mapped and return unless self.mapped_data.blank?
+    process_from_source
+  end
 
-    new_source_row if is_valid
+  def process_from_source
+    options = {
+      headers: true,
+      header_converters: :symbol,
+      converters: :all
+    }
+
+    definition = self.definition
+    self.source_data = CSV.parse(self.source_file.read, options).map{|row| Hash[row.map{|c,r| [c,r.to_s]}]}
+    self.record_count = self.source_data.count
+    self.mapped_data = definition.service.map_data(definition.mappings, self.source_data)
+  end
+
+  def process_from_mapped
+    self.record_count = self.mapped_data.count
+    self.mapped_data.each{|m| m['sync_status'] = 'copied'}
   end
 end

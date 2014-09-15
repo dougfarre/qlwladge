@@ -43,6 +43,10 @@ class Service < ActiveRecord::Base
   def sync
     raise "Service.sync is not defined"
   end
+  
+  def map_data(mappings, source_data)
+    raise "Service.build_data_map is not defined"
+  end
 
   # Class methods
 
@@ -51,6 +55,11 @@ class Service < ActiveRecord::Base
     #subclasses = ['Eloqua', 'Marketo'] if subclasses.blank?
     #return subclasses
     ['Eloqua', 'Marketo']
+  end
+
+  #make this hash that describes data type and mapped_to_id
+  def self.excluded_meta_attrs
+    ['tmp_id', 'assigned_entity_id', 'sync_status', 'sync_details']
   end
 
   private

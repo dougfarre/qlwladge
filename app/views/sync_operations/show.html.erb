@@ -32,8 +32,14 @@
 <% end %>
 
 <% if @sync_operation.reject_count.to_i > 0 %>
-<%= link_to 'Download CSV of Rejected Records', edit_definition_sync_operation_path(@definition, @sync_operation) %> |
-<br/>
+  <%= form_for [@definition, @definition.sync_operations.build] do |f| %>
+    <%= f.hidden_field :copied_from, value: @sync_operation.id.to_s %>
+
+    <div class="actions">
+      <%= f.submit "Create New Operation with Invalid Records" %>
+    </div>
+  <% end %>
+  <br/>
 <% end %>
 
 
