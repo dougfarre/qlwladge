@@ -4,7 +4,7 @@ class Marketo < Service
 
   def init
     self.name ||= 'Marketo'
-    self.auth_type ||= 'oauth2'
+    self.auth_type ||= 'oauth'
     self.api_path ||= '/rest'
     self.auth_path ||= '/identity'
     self.token_path ||= '/identity/oauth/token'

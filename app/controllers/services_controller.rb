@@ -15,7 +15,11 @@ class ServicesController < ApplicationController
   # GET /services/new
   def new
     @service = Service.new(name: service_params[:name])
-    this is where the redirect goes!
+    @service = @service.becomes(service_params[:name].constantize) if @service.valid?
+
+    if @service.auth_type == 'oauth2'
+      redirect_to @service.auth_address(request) and return
+    end
   end
 
   # GET /services/1/edit
@@ -68,7 +72,19 @@ class ServicesController < ApplicationController
   end
 
   def oauth2_callback
+    @service = current_user.services.build({name: url_params[:state]})
+    @service = @service.becomes(@service.type.constantize) if @service.valid?
+    @service.authenticate(request, url_params[:code])
 
+    if url_params[:error].blank? and @service.save
+      redirect_to @service, notice: get_update_message('created')
+    else
+      message = 'OAuth attempt failed: '
+      message << url_params[:error] if url_params[:error]
+      message << @service.errors.full_messages.to_s unless @service.errors.blank?
+
+      redirect_to services_path, notice: message and return
+    end
   end
 
   private
@@ -93,5 +109,9 @@ class ServicesController < ApplicationController
         :app_api_key, :app_api_secret,
         :custom_client_id, :custom_client_secret,
         :custom_domain, :service)
+  end
+
+  def url_params
+    params.permit(:code, :state, :error)
   end
 end

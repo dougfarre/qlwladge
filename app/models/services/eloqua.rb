@@ -1,7 +1,6 @@
 class Eloqua < Service
-  validates_presence_of :site_name
-  validates_presence_of :username, :password
   validates_presence_of :app_client_id, :app_client_secret
+  before_save :get_api_data
 
   def init
     self.name ||= 'Eloqua'
@@ -9,15 +8,12 @@ class Eloqua < Service
     self.auth_domain ||= 'https://login.eloqua.com'
     self.auth_path ||= '/auth/oauth2/authorize'
     self.token_path ||= '/auth/oauth2/token'
-
-    #self.api_domain ||= ''
-    #self.api_path ||= ''
-    #self.discover_path ||= '/contact/fields'
-    #self.lead_path ||= ''
+    self.app_client_id ||= Rails.application.secrets.eloqua_client_id
+    self.app_client_secret ||= Rails.application.secrets.eloqua_client_secret
+    self.api_path ||= '/API/Bulk/2.0/'
+    self.discover_path ||= '/contacts/fields'
+    self.lead_path ||= '/contacts/imports'
     self.request_parameters ||= load_parameters_file.to_json
-
-    #     https://awesomeapp.example.com/create/instance={InstanceId}&asset={AssetId}&site={SiteName}
-    #     http://localhost:3000/create/installId={InstallId}&appId={AppId}&callbackurl=http://localhost:3000/oauth/eloqua
   end
 
   def self.model_name
@@ -40,26 +36,6 @@ class Eloqua < Service
     self.app_api_secret
   end
 
-  def authenticate
-    check_required_attributes(attrs_for_auth_action)
-    auth_params = {
-      'grant_type' => 'password',
-      'scope' => 'full',
-      'username' => self.site_name + "\\" + self.username,
-      'password' => self.password
-    }
-
-    response_body = make_api_call(self.token_address, 'post', auth_params.to_json)
-    return nil unless response_body
-
-
-    response = EloquaParty.get(token_address)
-    return unless is_valid_response(response)
-
-    self.update_attributes!(response)
-    self.update_attribute(:auth_error, '')
-  end
-
   def auth_status
     check_required_attributes(attrs_for_auth_status)
 
@@ -78,6 +54,15 @@ class Eloqua < Service
 
   def discovery_address
     self.api_domain + self.discover_path
+  end
+
+  def auth_address(domain)
+    self.auth_domain + self.auth_path +
+      '?response_type=code'  +
+      '&client_id=' + self.app_client_id +
+      '&redirect_uri=' + self.class.redirect_address(domain)  +
+      '&scope=full' +
+      '&state=Eloqua'
   end
 
   def get_discovery
@@ -135,6 +120,38 @@ class Eloqua < Service
     end
   end
 
+  def oauth_client
+    OAuth2::Client.new(
+      self.app_client_id,
+      self.app_client_secret,
+      site: self.auth_domain,
+      authorize_url: self.auth_path,
+      token_url: self.token_path
+    )
+  end
+
+  def authenticate(request, code)
+    check_required_attributes(attrs_for_auth_action)
+    client = self.oauth_client
+    basic_auth = Base64.urlsafe_encode64(self.app_client_id + ':' + self.app_client_secret)
+
+    begin
+      response = client.auth_code.get_token(code,
+        redirect_uri: self.class.redirect_address(request),
+        headers: { 'Authorization' => 'Basic ' + basic_auth.to_s }
+      )
+    rescue OAuth2::Error => error
+      self.auth_error = error.to_s and return
+    end
+
+    self.assign_attributes({
+      access_token: response.token,
+      refresh_token: response.refresh_token,
+      expires_in: response.expires_in,
+      auth_error: ''
+    })
+  end
+
   private
 
   def make_api_call(address, type, data=nil)
@@ -143,19 +160,20 @@ class Eloqua < Service
       'Authorization' => 'Bearer ' + self.access_token,
       'Content-Type' => 'application/json'
     }
-    basic_auth = {username: self.app_client_id, password: self.app_client_secret}
     headers.merge('Content-Length' => data.size.to_s) if data
 
     if type.downcase.underscore == 'get'
-      response = MarketoParty.send(type.to_sym, address, headers: headers, basic_auth: basic_auth)
+      response = EloquaParty.send(type.to_sym, address, headers: headers)
     elsif type == 'post'
-      response = MarketoParty.send(type.to_sym, address, headers: headers, body: data.to_s, basic_auth: basic_auth)
+      response = EloquaParty.send(type.to_sym, address, headers: headers, body: data.to_s)
     else
-      raise 'Marketo only GET and POST actions at this time.' and return
+      raise 'Eloqua only GET and POST actions at this time.'
     end
 
-    return response unless response['success'] == false
+    return response #unless response['status'] == 'error'
 
+    # not sure how to handle errors yet because we are not sure what they look like
+=begin
     if !response['errors'].detect{|error| error['code'] == '602'}.blank?
       self.authenticate
       make_api_call(address, type, data)
@@ -167,10 +185,11 @@ class Eloqua < Service
     else
       raise 'API ERROR: ' + response['errors'].to_s
     end
+=end
   end
 
   def attrs_for_auth_action
-    [:site_name, :username, :password, :app_client_id, :app_client_secret]
+    [:app_client_id, :app_client_secret]
   end
 
   def attrs_for_auth_status
@@ -191,23 +210,11 @@ class Eloqua < Service
     end
   end
 
-  def check_required_attributes(attrs)
-    blank_attrs = attrs.select{|attr| self.send(attr).blank?}
-    error_message = "The following attribute(s) is/are not defined: " + blank_attrs.to_s
-    raise error_message unless blank_attrs.blank?
-  end
-
-  def is_token_expired
-    expires_at = self.updated_at + self.expires_in.seconds
-    Time.now > expires_at
-  end
-
-  def oauth_client
-    OAuth2::Client.new(
-      ENV['ELOQUA_CLIENT_ID'],
-      ENV['ELOQUA_CLIENT_SECRET'],
-      site: self.auth_domain
-    )
+  def get_api_data
+    response = make_api_call(self.auth_domain + '/id', 'get')
+    self.assign_attributes({
+      api_domain: response['urls']['base']
+    })
   end
 end
 

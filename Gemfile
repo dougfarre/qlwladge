@@ -70,3 +70,5 @@ gem 'unicorn'
 # Use debugger
 # gem 'debugger', group: [:development, :test]
 
+# Use thin so we can force ssl
+gem 'thin'

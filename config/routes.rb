@@ -21,7 +21,7 @@ Rails.application.routes.draw do
     end
   end
 
-  get "/auth/:provider/callback" => 'service#oauth2_callback' 
+  get "/oauth2/callback" => 'services#oauth2_callback'
 
   # Example of regular route:
   #   get 'products/:id' => 'catalog#view'

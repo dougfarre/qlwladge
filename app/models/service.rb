@@ -9,20 +9,21 @@ class Service < ActiveRecord::Base
 
   after_initialize :assign_type
   before_validation :name_is_valid_type
-  #before_save :init
 
   validates_uniqueness_of :user_id, scope: :name
   validates_presence_of :discover_path, :lead_path, :request_parameters
-  validate :name_is_valid_type
+  validate :name_is_valid_type, :no_auth_error
 
   def name=(value)
     write_attribute(:name, value)
     assign_type
   end
 
+=begin
   def authenticate
     raise "object.authenticate is not defined"
   end
+=end
 
   def authorization_status
     raise "object.authorization_status is not defined"
@@ -62,6 +63,23 @@ class Service < ActiveRecord::Base
     ['tmp_id', 'assigned_entity_id', 'sync_status', 'sync_details']
   end
 
+  def self.redirect_address(request)
+    uri = URI.parse(request.url)
+    uri.path = '/oauth2/callback'
+    uri.query = nil
+    uri.to_s
+  end
+  def check_required_attributes(attrs)
+    blank_attrs = attrs.select{|attr| self.send(attr).blank?}
+    error_message = "The following attribute(s) is/are not defined: " + blank_attrs.to_s
+    raise error_message unless blank_attrs.blank?
+  end
+
+  def is_token_expired
+    expires_at = self.updated_at + self.expires_in.seconds
+    Time.now > expires_at
+  end
+
   private
 
   def make_api_call(type, address, data)
@@ -69,6 +87,7 @@ class Service < ActiveRecord::Base
   end
 
   # Validators & callbacks
+  #
   def assign_type
     if name_is_valid_type
       self.type ||= self.name
@@ -82,6 +101,11 @@ class Service < ActiveRecord::Base
 
     errors.add(:name, error_message) if self.errors[:name].blank?
     false
+  end
+
+  def no_auth_error
+    return true if self.auth_error.blank?
+    errors.add(:base, self.auth_error) and return false
   end
 
   def load_parameters_file
