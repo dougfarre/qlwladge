@@ -43,6 +43,7 @@ class SyncOperationsController < ApplicationController
 
     respond_to do |format|
       if @sync_operation.save
+        @sync_operation.update_attributes(@definition.service.export_params(@definition.mappings, @sync_operation))
         format.html { redirect_to definition_sync_operation_path(@definition, @sync_operation), notice: 'Sync operation was successfully created.' }
         format.json { render :show, status: :created, location: @sync_operation }
       else

@@ -3,27 +3,21 @@ class Service < ActiveRecord::Base
   attr_accessor :custom_client_id, :custom_client_secret
   attr_accessor :app_client_id, :app_client_secret
   attr_accessor :username, :password
+  attr_accessor :current_request
 
   belongs_to :user
   has_many :definitions
 
-  after_initialize :assign_type
+  after_initialize :assign_type, if: :doesnt_have_type
   before_validation :name_is_valid_type
 
   validates_uniqueness_of :user_id, scope: :name
   validates_presence_of :discover_path, :lead_path, :request_parameters
   validate :name_is_valid_type, :no_auth_error
 
-  def name=(value)
-    write_attribute(:name, value)
-    assign_type
-  end
-
-=begin
   def authenticate
     raise "object.authenticate is not defined"
   end
-=end
 
   def authorization_status
     raise "object.authorization_status is not defined"
@@ -49,6 +43,10 @@ class Service < ActiveRecord::Base
     raise "Service.build_data_map is not defined"
   end
 
+  def export_params(mappings, sync_operation)
+    {}
+  end
+
   # Class methods
 
   def self.services
@@ -69,6 +67,7 @@ class Service < ActiveRecord::Base
     uri.query = nil
     uri.to_s
   end
+
   def check_required_attributes(attrs)
     blank_attrs = attrs.select{|attr| self.send(attr).blank?}
     error_message = "The following attribute(s) is/are not defined: " + blank_attrs.to_s
@@ -87,11 +86,9 @@ class Service < ActiveRecord::Base
   end
 
   # Validators & callbacks
-  #
   def assign_type
     if name_is_valid_type
-      self.type ||= self.name
-      self.becomes(self.type.constantize).init if new_record?
+      self.becomes!(self.name.constantize).init if new_record?
     end
   end
 
@@ -101,6 +98,10 @@ class Service < ActiveRecord::Base
 
     errors.add(:name, error_message) if self.errors[:name].blank?
     false
+  end
+
+  def doesnt_have_type
+    self.type.blank?
   end
 
   def no_auth_error

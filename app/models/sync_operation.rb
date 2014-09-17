@@ -12,7 +12,9 @@ class SyncOperation < ActiveRecord::Base
   belongs_to :definition
 
   validates_presence_of :source_file
+  validates_presence_of :unique_header
 
+  before_validation :set_unique_header
   before_save :process
 
   # return true/false
@@ -76,5 +78,12 @@ class SyncOperation < ActiveRecord::Base
   def process_from_mapped
     self.record_count = self.mapped_data.count
     self.mapped_data.each{|m| m['sync_status'] = 'copied'}
+  end
+
+  def set_unique_header
+    return unless new_record?
+    self.unique_header = self.definition.mappings.detect{|mapping|
+      !mapping.destination_field.blank? and !mapping.source_key
+    }.destination_field.name rescue nil
   end
 end

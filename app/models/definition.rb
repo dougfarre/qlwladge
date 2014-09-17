@@ -2,7 +2,7 @@ require 'csv'
 
 class Definition < ActiveRecord::Base
   mount_uploader :source_file, SourceFileUploader, one: :file_name
-  
+
   has_many :destination_fields, autosave: true
   has_many :request_parameters, autosave: true
   has_many :mappings, autosave: true

@@ -1,51 +1,11 @@
 
 <div width="500px;">
   <div style="width:210px;display:inline-block;text-align:right;">
-    <%= new_service.label :custom_domain, 'Domain provided by Eloqua' %>
+    <%= new_service.label :api_domain, 'Domain provided by Eloqua' %>
   </div>
   <div style="display:inline-block;">
-    <%= new_service.text_field :custom_domain, size: "40" %>
+    <%= new_service.text_field :api_domain, size: "40" %>
   </div>
 
   <div style="clear:both;"></div>
-
-  <div style="width:210px;display:inline-block;text-align:right;">
-    <%= new_service.label :app_client_id %>
-  </div>
-  <div style="display:inline-block;">
-    <%= new_service.text_field :app_client_id, size: "40"%>
-  </div>
-
-  <div style="clear:both;"></div>
-
-  <div style="width:210px;display:inline-block;text-align:right;">
-    <%= new_service.label :app_client_secret %>
-  </div>
-  <div style="display:inline-block;">
-    <%= new_service.text_field :app_client_secret, size: "40"%>
-  </div>
-
-  <div style="clear:both;"></div>
-
-  <div style="width:510px;display:inline-block;text-align:center;padding-top:20px;">
-    <b>Eloqua username & password will not be stored</b>
-  </div>
-
-  <div style="clear:both;"></div>
-
-  <div style="width:210px;display:inline-block;text-align:right;">
-    <%= new_service.label :username, 'Eloqua username' %>
-  </div>
-  <div style="display:inline-block;">
-    <%= new_service.text_field :auth_user, size: "40" %>
-  </div>
-  <div style="clear:both;"></div>
-
-  <div style="width:210px;display:inline-block;text-align:right;">
-    <%= new_service.label :password, 'Eloqua password' %>
-  </div>
-  <div style="display:inline-block;">
-    <%= new_service.text_field :auth_user, size: "40" %>
-  </div>
-
 </div>
