@@ -14,7 +14,13 @@ class ServicesController < ApplicationController
 
   # GET /services/new
   def new
-    @service = Service.new(name: service_params[:name])
+    @service = Service.new(name: service_params[:name], current_request: request)
+    @service = @service.becomes(service_params[:name].constantize) if @service.valid?
+    @service.current_request = request
+
+    if @service.auth_type == 'oauth2'
+      redirect_to @service.auth_address and return
+    end
   end
 
   # GET /services/1/edit
@@ -24,9 +30,9 @@ class ServicesController < ApplicationController
   # POST /services
   # POST /services.json
   def create
-    @service = Service.new(name: service_params[:name])
+    @service = Service.new(name: service_params[:name], current_request: request)
     @service = @service.becomes(service_params[:name].constantize) if @service.valid?
-    @service.assign_attributes(service_params)
+    @service.assign_attributes(service_params.merge({current_request: request}))
     @service.user = current_user
 
     respond_to do |format|
@@ -45,7 +51,7 @@ class ServicesController < ApplicationController
   # PATCH/PUT /services/1.json
   def update
     respond_to do |format|
-      if @service.update(service_params)
+      if @service.update(service_params.merge({current_request: request}))
         @service.authenticate
         format.html { redirect_to @service, notice: get_update_message('updated') }
         format.json { render :show, status: :ok, location: @service }
@@ -66,12 +72,34 @@ class ServicesController < ApplicationController
     end
   end
 
+  def oauth2_callback
+    @service = current_user.services.build({
+      name: url_params[:state], 
+      access_code: url_params[:code],
+      current_request: request
+    })
+    @service = @service.becomes(@service.type.constantize) if @service.valid?
+    @service.current_request = request
+    @service.authenticate
+
+    if url_params[:error].blank? and @service.save
+      redirect_to @service, notice: get_update_message('created')
+    else
+      message = 'OAuth attempt failed: '
+      message << url_params[:error] if url_params[:error]
+      message << @service.errors.full_messages.to_s unless @service.errors.blank?
+
+      redirect_to services_path, notice: message and return
+    end
+  end
+
   private
 
   # Use callbacks to share common setup or constraints between actions.
   def set_service
     @service = Service.find(params[:id])
     @service = @service.becomes(@service.type.constantize) if @service.valid?
+    @service.current_request = request
   end
 
   def get_update_message(action)
@@ -88,5 +116,9 @@ class ServicesController < ApplicationController
         :app_api_key, :app_api_secret,
         :custom_client_id, :custom_client_secret,
         :custom_domain, :service)
+  end
+
+  def url_params
+    params.permit(:code, :state, :error)
   end
 end

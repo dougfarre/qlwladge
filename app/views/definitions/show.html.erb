@@ -18,13 +18,13 @@
 
 <%= render partial: 'mappings/index', locals: { service: @service, definition: @definition } %>
 
-<h2>Sync Operation Attempts</h2>
-<p style="margin-top:-15px;">
-Attempts to push data from CSV to service based on mappings defined above.
-</p>
+<% if  @definition.mappings.detect{|x| x.destination_field} %>
+  <h2>Sync Operation Attempts</h2>
+    <p style="margin-top:-15px;">
+    Attempts to push data from CSV to service based on mappings defined above.
+    </p>
 
-<%= render partial: 'sync_operations/index', locals: { service: @service, definition: @definition, sync_operations: @definition.sync_operations } %>
-
-
+    <%= render partial: 'sync_operations/index', locals: { service: @service, definition: @definition, sync_operations: @definition.sync_operations } %>
+  <% end %>
 
 <%= link_to 'Back', service_path(@service) %>

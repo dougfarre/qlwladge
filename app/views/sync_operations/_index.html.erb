@@ -3,7 +3,9 @@
     <tr>
       <th>ID</th>
       <th>Uploaded</th>
-      <th>Has Rejects</th>
+      <th>Record Count</th>
+      <th>Success Count</th>
+      <th>Reject Count</th>
     </tr>
   </thead>
 
@@ -11,9 +13,11 @@
     <% sync_operations.each do |sync_operation| %>
       <tr>
         <td><%= sync_operation.id %>
-        <td><%= !sync_operation.response.blank?.to_s %>
-        <td><%= sync_operation.has_rejects %>
-        <td><%= link_to 'Show', sync_operation %></td>
+        <td><%= !sync_operation.response.blank? %>
+        <td><%= sync_operation.record_count %>
+        <td><%= sync_operation.success_count %>
+        <td><%= sync_operation.reject_count %>
+        <td><%= link_to 'Show', definition_sync_operation_path(definition, sync_operation) %></td>
       </tr>
     <% end %>
   </tbody>
@@ -21,5 +25,6 @@
 
 
 <%= link_to 'New Sync operation', new_definition_sync_operation_path(definition) %>
+
 <br/>
 <br/>

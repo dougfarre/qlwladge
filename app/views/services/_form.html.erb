@@ -1,11 +1,15 @@
 <%= form_for(@service) do |f| %>
-  <% if @service.errors.any? %>
+  <% if @service.errors.any? or !@service.auth_error.blank? %>
     <div id="error_explanation">
       <h2><%= pluralize(@service.errors.count, "error") %> prohibited this service from being saved:</h2>
 
       <ul>
       <% @service.errors.full_messages.each do |message| %>
         <li><%= message %></li>
+      <% end %>
+
+      <% if @service.auth_error %>
+        <li><%= @service.auth_error %></li>
       <% end %>
       </ul>
     </div>

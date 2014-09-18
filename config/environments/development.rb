@@ -33,4 +33,9 @@ Rails.application.configure do
   # config.action_view.raise_on_missing_translations = true
 
   config.eager_load = true
+
+  # Debugging
+  config.use_ssl = true
+  config.ssl_port = 3000
 end
+

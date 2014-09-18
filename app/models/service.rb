@@ -1,22 +1,19 @@
 class Service < ActiveRecord::Base
   attr_accessor :custom_domain
   attr_accessor :custom_client_id, :custom_client_secret
+  attr_accessor :app_client_id, :app_client_secret
+  attr_accessor :username, :password
+  attr_accessor :current_request
 
   belongs_to :user
   has_many :definitions
 
-  after_initialize :assign_type
+  after_initialize :assign_type, if: :doesnt_have_type
   before_validation :name_is_valid_type
-  before_save :init
 
   validates_uniqueness_of :user_id, scope: :name
   validates_presence_of :discover_path, :lead_path, :request_parameters
-  validate :name_is_valid_type
-
-  def name=(value)
-    write_attribute(:name, value)
-    assign_type
-  end
+  validate :name_is_valid_type, :no_auth_error
 
   def authenticate
     raise "object.authenticate is not defined"
@@ -38,6 +35,18 @@ class Service < ActiveRecord::Base
     raise "Service.get_discovery is not defined"
   end
 
+  def sync
+    raise "Service.sync is not defined"
+  end
+  
+  def map_data(mappings, source_data)
+    raise "Service.build_data_map is not defined"
+  end
+
+  def export_params(mappings, sync_operation)
+    {}
+  end
+
   # Class methods
 
   def self.services
@@ -45,6 +54,29 @@ class Service < ActiveRecord::Base
     #subclasses = ['Eloqua', 'Marketo'] if subclasses.blank?
     #return subclasses
     ['Eloqua', 'Marketo']
+  end
+
+  #make this hash that describes data type and mapped_to_id
+  def self.excluded_meta_attrs
+    ['tmp_id', 'assigned_entity_id', 'sync_status', 'sync_details']
+  end
+
+  def self.redirect_address(request)
+    uri = URI.parse(request.url)
+    uri.path = '/oauth2/callback'
+    uri.query = nil
+    uri.to_s
+  end
+
+  def check_required_attributes(attrs)
+    blank_attrs = attrs.select{|attr| self.send(attr).blank?}
+    error_message = "The following attribute(s) is/are not defined: " + blank_attrs.to_s
+    raise error_message unless blank_attrs.blank?
+  end
+
+  def is_token_expired
+    expires_at = self.updated_at + self.expires_in.seconds
+    Time.now > expires_at
   end
 
   private
@@ -55,7 +87,9 @@ class Service < ActiveRecord::Base
 
   # Validators & callbacks
   def assign_type
-    self.type ||= self.name if name_is_valid_type
+    if name_is_valid_type
+      self.becomes!(self.name.constantize).init if new_record?
+    end
   end
 
   def name_is_valid_type
@@ -64,6 +98,15 @@ class Service < ActiveRecord::Base
 
     errors.add(:name, error_message) if self.errors[:name].blank?
     false
+  end
+
+  def doesnt_have_type
+    self.type.blank?
+  end
+
+  def no_auth_error
+    return true if self.auth_error.blank?
+    errors.add(:base, self.auth_error) and return false
   end
 
   def load_parameters_file

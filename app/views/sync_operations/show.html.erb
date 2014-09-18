@@ -1,4 +1,46 @@
-<p id="notice"><%= notice %></p>
+<h1>Sync Operation</h1>
+<b>File Name: </b><i><%= @sync_operation.source_file.to_s %></i>
+<br/><br/>
+<b>Record Count: </b><i><%= @sync_operation.record_count %></i>
+<br/><br/>
+<b>Success Count: </b><i><%= @sync_operation.success_count  %></i>
+<br/><br/>
+<b>Reject Count: </b><i><%= @sync_operation.reject_count  %></i>
+<br/><br/>
+<% unless @sync_operation.response.blank? %>
+  <b>Date of Sync: </b><i><%= @sync_operation.updated_at %></i>
+<% end %>
+<br/><br/>
 
-<%= link_to 'Edit', edit_sync_operation_path(@sync_operation) %> |
-<%= link_to 'Back', sync_operations_path %>
+<% if @sync_operation.response.blank? %>
+  <h2>Records to Sync</h2>
+  <p style="margin-top:-15px;">Summary table of records to be synced.</p>
+<% else %>
+  <h2>Synced Record Status</h2>
+  <p style="margin-top:-15px;">Synced record status.</p>
+<% end %>
+
+<div id="tablecontent"></div>
+<br/>
+
+<%= form_for [@definition, @sync_operation] do |f| %>
+  <% if @sync_operation.response.blank? %>
+    <div class="actions">
+      <%= f.submit "Sync Data!" %>
+    </div>
+  <% end %>
+<% end %>
+
+<% if @sync_operation.reject_count.to_i > 0 %>
+  <%= form_for [@definition, @definition.sync_operations.build] do |f| %>
+    <%= f.hidden_field :copied_from, value: @sync_operation.id.to_s %>
+
+    <div class="actions">
+      <%= f.submit "Create New Operation with Invalid Records" %>
+    </div>
+  <% end %>
+  <br/>
+<% end %>
+
+
+<%= link_to 'Back', service_definition_path(@definition.service, @definition) %>

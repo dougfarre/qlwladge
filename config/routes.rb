@@ -5,23 +5,23 @@ Rails.application.routes.draw do
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".
 
-  # You can have the root of your site routed with "root"
-  devise_scope :user do
-    #root to: "devise/sessions#new"
-  end
-
   resources :services do
-    resources :definitions #, shallow: true
-  end
-
-  resources :definitions do #, shallow: true do
-    resources :destination_fields
-    resources :mappings
-    resources :sync_operations
+    resources :definitions
   end
 
   resources :eloqua, :controller => 'services'
   resources :marketo, :controller => 'services'
+
+  resources :definitions do
+    resources :sync_operations do
+      member do
+       get 'source_data_grid'
+       post 'update_grid_row'
+      end
+    end
+  end
+
+  get "/oauth2/callback" => 'services#oauth2_callback'
 
   # Example of regular route:
   #   get 'products/:id' => 'catalog#view'

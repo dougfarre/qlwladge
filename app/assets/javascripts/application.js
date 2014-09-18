@@ -17,14 +17,15 @@
 //= require_tree .
 
 var DefinitionsController = Paloma.controller('Definitions');
+var SyncOperationsController = Paloma.controller('SyncOperations');
 
 DefinitionsController.prototype.show = function() {
   $("select").change(function() {
-    if (this.value == "") return;
+    if (this.value === "")  {return;}
 
     var self = this,
       hidden_d_field_element = $('input#d_field_' + self.value),
-      d_field = JSON.parse(hidden_d_field_element.val()),
+      d_field = JSON3.parse(hidden_d_field_element.val()),
       header_name = $(this).parent().prev().text().trim(),
       tag_prefix = "td[id='mapping[" + header_name + "]";
 
@@ -34,3 +35,59 @@ DefinitionsController.prototype.show = function() {
    $(tag_prefix + "[allows_null]']").text(d_field.allows_null);
   }).change();
 };
+
+SyncOperationsController.prototype.show = function() {
+  $(document).on('ready, page:change', function() {
+    var editableGrid = new EditableGrid("RequestInput"),
+        params = Paloma.engine._request.params,
+        getGridPath = params['source_data_grid_link'] + '.json',
+        updateGridPath = params['update_grid_link'];
+
+    editableGrid.tableLoaded = function() {
+      this.renderGrid("tablecontent", "table-editor");
+    };
+
+    $.ajax({
+      url: getGridPath,
+      contentType: "application/json",
+      cache: false,
+      success: function (result) {
+        editableGrid.load(result);
+        editableGrid.tableLoaded();
+      }
+    });
+
+    editableGrid.modelChanged = function(rowIndex, columnIndex, oldValue) {
+      var newRow = this.getRowValues(rowIndex),
+          oldRow = JSON3.parse(JSON3.stringify(newRow));
+
+      oldRow[this.getColumnName(columnIndex)] = oldValue;
+
+      var data = JSON3.stringify({'grid_row': {
+          'old_row': oldRow,
+          'new_row': newRow
+        }});
+
+      $.ajax({
+        url: updateGridPath,
+        type: 'POST',
+        dataType: "text",
+        contentType: "application/json",
+        data: data,
+        success: function(resp) {
+          var response = JSON3.parse(resp);
+          if (response['success'] !== 'true') {
+            editableGrid.setValueAt(rowIndex, columnIndex, oldValue); 
+            console.log(response);
+            alert(response['message']);
+          }
+        },
+        error: function(XMLHttpRequest, textStatus, exception) {
+          alert(XMLHttpRequest.responseText);
+        }
+      });
+    };
+  });
+};
+
+

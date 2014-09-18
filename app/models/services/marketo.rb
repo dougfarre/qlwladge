@@ -4,7 +4,7 @@ class Marketo < Service
 
   def init
     self.name ||= 'Marketo'
-    self.auth_type ||= 'oauth2'
+    self.auth_type ||= 'oauth'
     self.api_path ||= '/rest'
     self.auth_path ||= '/identity'
     self.token_path ||= '/identity/oauth/token'
@@ -73,6 +73,7 @@ class Marketo < Service
 
   def get_discovery
     discovery_fields = make_api_call(self.discovery_address, 'get')
+    return unless discovery_fields
 
     discovery_fields['result'].map { |f|
       {
@@ -84,19 +85,84 @@ class Marketo < Service
     }
   end
 
-  # Class Methods
+  # TODO: decouple (model dependencies)
+  def sync(definition, sync_operation)
+    input_param = sync_operation.mapped_data.map do |row|
+      Service.excluded_meta_attrs.each{|attr| row.delete(attr)}
+      row
+    end
+
+    request_body = Hash[definition.request_parameters.map {|param|
+      [param.name, param.value] unless param.value.blank?
+    }.compact!]
+    request_body = request_body.merge("input" => input_param)
+
+    response_body = make_api_call(self.lead_address, 'post', request_body.to_json)
+    return nil unless response_body
+
+    response_object = response_body.parsed_response
+    success_count = nil
+    rejects_count = nil
+
+    if response_object['success'] == true
+      all_results = response_body['result']
+      success_count = all_results.select{|r| !r['id'].blank? }.count
+      rejects_count = all_results.count - success_count
+    end
+
+    return {
+      assigned_service_id: response_object['requestId'],
+      request: request_body,
+      response: response_object,
+      success_count: success_count,
+      reject_count: rejects_count
+    }
+  end
+
+  def map_data(mappings, source_data)
+    source_data.map.with_index do |record, i|
+      Hash[mappings.map {|mapping|
+        if mapping.destination_field
+          record_key = mapping.source_header.parameterize.underscore.to_sym
+          [mapping.destination_field.name, record[record_key].to_s]
+        end
+      }.compact!].merge({
+        'tmp_id' => i + 1,
+        'assigned_entity_id' => '',
+        'sync_status' => 'new',
+        'sync_details' => ''
+      })
+    end
+  end
 
   private
 
   def make_api_call(address, type, data=nil)
-    headers = { 'Authorization' => 'Bearer ' + self.access_token }
-    response = MarketoParty.send(type || 'get', address, headers: headers)
+    response = nil
+    headers = {
+      'Authorization' => 'Bearer ' + self.access_token,
+      'Content-Type' => 'application/json'
+    }
+    headers.merge('Content-Length' => data.size.to_s) if data
+
+    if type.downcase.underscore == 'get'
+      response = MarketoParty.send(type.to_sym, address, headers: headers)
+    elsif type == 'post'
+      response = MarketoParty.send(type.to_sym, address, headers: headers, body: data.to_s )
+    else
+      raise 'Marketo only GET and POST actions at this time.' and return
+    end
 
     return response unless response['success'] == false
 
-    unless response['errors'].detect{|error| error['code'] == '602'}.blank?
+    if !response['errors'].detect{|error| error['code'] == '602'}.blank?
       self.authenticate
       make_api_call(address, type, data)
+    elsif !response['errors'].detect{|error| error['code'] == '601'}.blank?
+      message = 'Client keys and/or secret is invalid'
+      errors.add(:base, message )
+      self.update_attribute(:auth_error, message)
+      return nil
     else
       raise 'API ERROR: ' + response['errors'].to_s
     end
