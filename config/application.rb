@@ -22,6 +22,5 @@ module ScaleFactor
 
     # Read subfolders in the models directory
     config.autoload_paths += Dir[Rails.root.join('app', 'models', '{**/}')]
-
   end
 end

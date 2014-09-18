@@ -1,15 +1,16 @@
 class VendHQ < Service
-  validates_presence_of :custom_domain
-  validates_presence_of :custom_client_id, :custom_client_secret
+  validates_presence_of :app_id, :app_secret, :custom_domain
+  #before_save :get_api_data
 
   def init
     self.name ||= 'VendHQ'
     self.auth_type ||= 'oauth2'
     self.api_path ||= '/api'
+    self.auth_domain ||= 'https://secure.vendhq.com'
     self.auth_path ||= '/connect'
     self.token_path ||= '/api/1.0/token'
-    self.discover_path ||= '/v1/leads/describe.json'
-    self.lead_path ||= '/v1/leads.json'
+    self.app_id ||= Rails.application.secrets.vendhq_app_id
+    self.app_secret ||= Rails.application.secrets.vendhq_app_secret
     self.request_parameters ||= load_parameters_file.to_json
   end
 
@@ -18,27 +19,26 @@ class VendHQ < Service
   end
 
   def custom_domain=(value)
-    write_attribute(:auth_domain, value)
-    write_attribute(:api_domain, value + self.api_path)
+    write_attribute(:api_domain)
   end
 
-  def custom_client_id=(value)
+  def app_id=(value)
     write_attribute(:app_api_key, value)
   end
 
-  def custom_client_secret=(value)
+  def app_secret=(value)
     write_attribute(:app_api_secret, value)
   end
 
   def custom_domain
-    self.auth_domain
+    self.api_domain
   end
 
-  def custom_client_id
+  def app_id
     self.app_api_key
   end
 
-  def custom_client_secret
+  def app_secret
     self.app_api_secret
   end
 
@@ -71,6 +71,14 @@ class VendHQ < Service
     self.api_domain + self.discover_path
   end
 
+  def auth_address
+    binding.pry
+    self.auth_domain + self.auth_path +
+      '?response_type=code'  +
+      '&client_id=' + self.app_id +
+      '&redirect_uri=' + self.class.redirect_address(self.current_request)
+  end
+
   def get_discovery
     discovery_fields = make_api_call(self.discovery_address, 'get')
 
@@ -84,26 +92,124 @@ class VendHQ < Service
     }
   end
 
-  # Class Methods
-
-  private
-
-  def make_api_call(address, type, data=nil)
-    headers = { 'Authorization' => 'Bearer ' + self.access_token }
-    response = MarketoParty.send(type || 'get', address, headers: headers)
-
-    return response unless response['success'] == false
-
-    unless response['errors'].detect{|error| error['code'] == '602'}.blank?
-      self.authenticate
-      make_api_call(address, type, data)
-    else
-      raise 'API ERROR: ' + response['errors'].to_s
+  def map_data(mappings, source_data)
+    source_data.map.with_index do |record, i|
+      Hash[mappings.map {|mapping|
+        if mapping.destination_field
+          record_key = mapping.source_header.parameterize.underscore.to_sym
+          [mapping.destination_field.name, record[record_key].to_s]
+        end
+      }.compact!].merge({
+        'tmp_id' => i + 1,
+        'assigned_entity_id' => '',
+        'sync_status' => 'new',
+        'sync_details' => ''
+      })
     end
   end
 
+  # TODO: decouple (model dependencies)
+  def sync(definition, sync_operation)
+    export_address = self.api_domain + sync_operation.assigned_service_id + '/data'
+    request_body = sync_operation.mapped_data.map do |row|
+      Service.excluded_meta_attrs.each{|attr| row.delete(attr)}
+      row
+    end
+
+    response_body = make_api_call(export_address, 'post', request_body.to_json)
+    return nil unless response_body
+
+    response_object = response_body.parsed_response
+
+    return {
+      request: request_body,
+      response: response_object,
+      assigned_sync_id: response_object['syncedInstanceUrl'],
+      pending_count: sync_operation.mapped_data.count
+    }
+  end
+
+  def oauth_client
+    OAuth2::Client.new(
+      self.app_client_id,
+      self.app_client_secret,
+      site: self.auth_domain,
+      authorize_url: self.auth_path,
+      token_url: self.token_path
+    )
+  end
+
+  def authenticate
+    self.reauthenticate and return if self.refresh_token
+    check_required_attributes(attrs_for_auth_action)
+    auth_call(false)
+  end
+
+  def reauthenticate
+    check_required_attributes(attrs_for_reauth_action)
+    auth_call(true)
+  end
+
+  private
+
+  def auth_call(is_reauth)
+    client = self.oauth_client
+    token_params = {
+      redirect_uri: self.class.redirect_address(self.current_request),
+      client_id: self.app_id,
+      client_secret: self.app_secret
+    }
+    token_params.merge!({
+      'grant_type' => 'refresh_token',
+      'refresh_token' => self.refresh_token,
+      'client_id' => self.app_id,
+      'client_secret' => self.app_secret
+    }) if is_reauth
+
+    begin
+      response = client.auth_code.get_token(self.access_code, token_params)
+    rescue OAuth2::Error => error
+      self.auth_error = error.to_s and return
+    end
+
+    self.assign_attributes({
+      access_token: response.token,
+      refresh_token: response.refresh_token,
+      expires_in: response.expires_in,
+      auth_error: ''
+    })
+  end
+
+  def make_api_call(address, type, data=nil)
+    headers = {
+      'Authorization' => 'Bearer ' + self.access_token,
+      'Content-Type' => 'application/json'
+    }
+    headers.merge('Content-Length' => data.size.to_s) if data
+
+    if type.downcase.underscore == 'get'
+      response = VendHQParty.send(type.to_sym, address, headers: headers)
+    elsif type == 'post'
+      response = VendHQParty.send(type.to_sym, address, headers: headers, body: data.to_s)
+    else
+      raise 'VendHQ only GET and POST actions at this time.'
+    end
+
+    if response === 'Not authenticated.'
+      self.auth_error = response.to_s
+      self.reauthenticate
+      make_api_call(address, type, data)
+    end
+
+    response
+  end
+
   def attrs_for_auth_action
-    [:custom_domain, :custom_client_id, :custom_client_secret]
+    [:app_client_id, :app_client_secret, :access_code, :current_request]
+  end
+
+  def attrs_for_reauth_action
+    [:app_client_id, :app_client_secret, :refresh_token, :current_request]
   end
 
   def attrs_for_auth_status
@@ -111,11 +217,7 @@ class VendHQ < Service
   end
 
   def token_address
-    token_address = self.auth_domain + self.token_path
-    token_params = "?grant_type=client_credentials" +
-      "&client_id=" + self.custom_client_id +
-      "&client_secret=" + self.custom_client_secret
-    token_address + token_params
+    self.auth_domain + self.token_path
   end
 
   def is_valid_response(response)
@@ -128,15 +230,13 @@ class VendHQ < Service
     end
   end
 
-  def check_required_attributes(attrs)
-    blank_attrs = attrs.select{|attr| self.send(attr).blank?}
-    error_message = "The following attribute(s) is/are not defined: " + blank_attrs.to_s
-    raise error_message unless blank_attrs.blank?
+  def get_api_data
+    return unless new_record?
+    response = make_api_call(self.auth_domain + '/id', 'get')
+    self.assign_attributes({
+      api_domain: response['urls']['base'] + self.api_path
+    })
   end
 
-  def is_token_expired
-    expires_at = self.updated_at + self.expires_in.seconds
-    Time.now > expires_at
-  end
 end
 

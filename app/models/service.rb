@@ -1,8 +1,6 @@
 class Service < ActiveRecord::Base
   attr_accessor :custom_domain
-  attr_accessor :custom_client_id, :custom_client_secret
-  attr_accessor :app_client_id, :app_client_secret
-  attr_accessor :username, :password
+  attr_accessor :app_id, :app_secret
   attr_accessor :current_request
 
   belongs_to :user
@@ -12,8 +10,7 @@ class Service < ActiveRecord::Base
   before_validation :name_is_valid_type
 
   validates_uniqueness_of :user_id, scope: :name
-  validates_presence_of :discover_path, :lead_path, :request_parameters
-  validate :name_is_valid_type, :no_auth_error
+  validate :no_auth_error
 
   def authenticate
     raise "object.authenticate is not defined"
@@ -53,7 +50,7 @@ class Service < ActiveRecord::Base
     #subclasses = Service.subclasses.map(&:name)
     #subclasses = ['Eloqua', 'Marketo'] if subclasses.blank?
     #return subclasses
-    ['Eloqua', 'Marketo']
+    ['VendHQ']
   end
 
   #make this hash that describes data type and mapped_to_id
@@ -87,9 +84,7 @@ class Service < ActiveRecord::Base
 
   # Validators & callbacks
   def assign_type
-    if name_is_valid_type
-      self.becomes!(self.name.constantize).init if new_record?
-    end
+    self.becomes!(self.name.constantize).init if new_record? && name_is_valid_type
   end
 
   def name_is_valid_type

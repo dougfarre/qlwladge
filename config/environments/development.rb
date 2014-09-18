@@ -32,6 +32,8 @@ Rails.application.configure do
   # Raises error for missing translations
   # config.action_view.raise_on_missing_translations = true
 
+  # Eager loading to support STI
+  config.reload_classes_only_on_change = false
   config.eager_load = true
 
   # Debugging

@@ -17,7 +17,7 @@ class ServicesController < ApplicationController
     @service = Service.new(name: service_params[:name], current_request: request)
     @service = @service.becomes(service_params[:name].constantize) if @service.valid?
     @service.current_request = request
-
+    binding.pry
     if @service.auth_type == 'oauth2'
       redirect_to @service.auth_address and return
     end
@@ -74,8 +74,9 @@ class ServicesController < ApplicationController
 
   def oauth2_callback
     @service = current_user.services.build({
-      name: url_params[:state], 
+      name: 'VendHQ',
       access_code: url_params[:code],
+      custom_domain: 'https://' + url_params[:domain_prefix] + '.vendhq.com',
       current_request: request
     })
     @service = @service.becomes(@service.type.constantize) if @service.valid?
@@ -119,6 +120,6 @@ class ServicesController < ApplicationController
   end
 
   def url_params
-    params.permit(:code, :state, :error)
+    params.permit(:code, :state, :error, :domain_prefix)
   end
 end
