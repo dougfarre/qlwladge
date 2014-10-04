@@ -149,7 +149,6 @@ class Eloqua < Service
     }
 
     response = make_api_call(lead_address, 'post', export_definition.to_json)
-    binding.pry
     { assigned_service_id: response['uri'], name: response['name'] }
   end
 

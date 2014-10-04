@@ -1,4 +1,27 @@
 parameters:
-  lookupField:
-    description: 'If specified, will use this attribute to find the duplicate'
-    optional: false 
+  since:
+    description: 'If included, returns only register sales modified since the given time. The provided date and time should be in UTC and formtted according to ISO 8601.'
+    optional: true
+    options_type: 'date'
+  outlet_id:
+    description: 'If included, returns only register sales made for the given outlet, identified by ID.' 
+    optional: true
+    options_type: 'hash'
+    url: '/api/outlets'
+  tag:
+    description: 'If included, returns only register sales containing a product with a given tag. Note that the complete sale record is returned, including the details of any other products in the same; these may not have the specified tag.'
+    optional: true
+    options_type: 'string'
+  status:
+    description: 'If included, returns only register sales in the given state.'
+    optional: true
+    options_type: 'array'
+    options:
+      - OPEN
+      - CLOSED
+      - SAVED
+      - LAYBY
+      - LAYBY_CLOSED
+      - ON_ACCOUNT
+      - ON_ACCOUNT_CLOSED
+      - VOIDED

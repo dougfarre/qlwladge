@@ -1,5 +1,5 @@
 Rails.application.routes.draw do
-  root 'main#index'
+  root 'services#index'
 
   devise_for :user
   # The priority is based upon order of creation: first created -> highest priority.

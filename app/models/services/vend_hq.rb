@@ -1,6 +1,8 @@
+require 'open3'
+
 class VendHQ < Service
-  validates_presence_of :app_id, :app_secret, :custom_domain
-  #before_save :get_api_data
+  validates_presence_of :app_id, :app_secret
+  validate :validate_metrc_credentials, on: :update
 
   def init
     self.name ||= 'VendHQ'
@@ -14,12 +16,16 @@ class VendHQ < Service
     self.request_parameters ||= load_parameters_file.to_json
   end
 
-  def self.model_name
-    Service.model_name
+  def validate_metrc_credentials
+    auth_status = self.auth_status == "Authenticated" rescue false
+    if !new_record? and auth_status
+      errors.add(:metrc_username, 'cannot be blank') if self.metrc_username.blank?
+      errors.add(:metrc_password, 'cannot be blank') if self.metrc_password.blank?
+    end
   end
 
-  def custom_domain=(value)
-    write_attribute(:api_domain)
+  def self.model_name
+    Service.model_name
   end
 
   def app_id=(value)
@@ -30,25 +36,12 @@ class VendHQ < Service
     write_attribute(:app_api_secret, value)
   end
 
-  def custom_domain
-    self.api_domain
-  end
-
   def app_id
     self.app_api_key
   end
 
   def app_secret
     self.app_api_secret
-  end
-
-  def authenticate
-    check_required_attributes(attrs_for_auth_action)
-    response = MarketoParty.get(token_address)
-    return unless is_valid_response(response)
-
-    self.update_attributes!(response)
-    self.update_attribute(:auth_error, '')
   end
 
   def auth_status
@@ -72,11 +65,16 @@ class VendHQ < Service
   end
 
   def auth_address
-    binding.pry
     self.auth_domain + self.auth_path +
       '?response_type=code'  +
       '&client_id=' + self.app_id +
       '&redirect_uri=' + self.class.redirect_address(self.current_request)
+  end
+
+  def generic_call(path)
+    path_array = path.split('/')
+    entity = path_array[path_array.length - 1]
+    make_api_call(self.api_domain + path, 'get')[entity]
   end
 
   def get_discovery
@@ -129,20 +127,24 @@ class VendHQ < Service
     }
   end
 
-  def oauth_client
+  def oauth_client(get_token=false)
     OAuth2::Client.new(
-      self.app_client_id,
-      self.app_client_secret,
-      site: self.auth_domain,
+      self.app_id,
+      self.app_secret,
+      site: get_token ? self.api_domain : self.auth_domain,
       authorize_url: self.auth_path,
       token_url: self.token_path
     )
   end
 
   def authenticate
-    self.reauthenticate and return if self.refresh_token
-    check_required_attributes(attrs_for_auth_action)
-    auth_call(false)
+    if !self.access_token.blank?
+      self.reauthenticate
+    else
+      return true unless self.new_record?
+      check_required_attributes(attrs_for_auth_action)
+      auth_call(false)
+    end
   end
 
   def reauthenticate
@@ -150,34 +152,57 @@ class VendHQ < Service
     auth_call(true)
   end
 
+  def metrc_facilities
+    error_message = "Metrc credentials invalid or the service is offline."
+    cmd = Rails.root.to_s + '/product_report/node_modules/casperjs/bin/casperjs'
+    cmd << ' ' + Rails.root.to_s + '/product_report/facility_scraper.js'
+    cmd << ' ' + '--username="' + self.metrc_username + '"'
+    cmd << ' ' + '--password="' + self.metrc_password + '"'
+
+    Open3.popen3(cmd) do |stdin, stdout, stderr, wait_thr|
+      response = JSON.parse(stdout.read.delete!("\n"))
+      return response unless response[0] == 'error'
+    end
+
+    self.update_attribute(:auth_error, error_message)
+  end
+
   private
 
   def auth_call(is_reauth)
-    client = self.oauth_client
+    client = self.oauth_client(true)
     token_params = {
-      redirect_uri: self.class.redirect_address(self.current_request),
-      client_id: self.app_id,
-      client_secret: self.app_secret
+      'redirect_uri' => self.class.redirect_address(self.current_request),
+      'client_id' => self.app_id,
+      'client_secret' => self.app_secret
     }
     token_params.merge!({
       'grant_type' => 'refresh_token',
       'refresh_token' => self.refresh_token,
-      'client_id' => self.app_id,
-      'client_secret' => self.app_secret
     }) if is_reauth
-
+    token_params.delete('redirect_uri') if is_reauth
     begin
+
       response = client.auth_code.get_token(self.access_code, token_params)
     rescue OAuth2::Error => error
       self.auth_error = error.to_s and return
     end
 
+    response.refresh_token = self.refresh_token unless response.refresh_token
+
     self.assign_attributes({
       access_token: response.token,
       refresh_token: response.refresh_token,
       expires_in: response.expires_in,
+      facilities: [],
       auth_error: ''
     })
+
+    if !self.metrc_username.blank? and !self.metrc_password.blank?
+      self.facilities = self.metrc_facilities
+    end
+
+    return self.valid?
   end
 
   def make_api_call(address, type, data=nil)
@@ -205,19 +230,15 @@ class VendHQ < Service
   end
 
   def attrs_for_auth_action
-    [:app_client_id, :app_client_secret, :access_code, :current_request]
+    [:app_id, :app_secret, :access_code, :current_request]
   end
 
   def attrs_for_reauth_action
-    [:app_client_id, :app_client_secret, :refresh_token, :current_request]
+    [:app_id, :app_secret, :refresh_token, :current_request]
   end
 
   def attrs_for_auth_status
     [:updated_at, :expires_in]
-  end
-
-  def token_address
-    self.auth_domain + self.token_path
   end
 
   def is_valid_response(response)
@@ -237,6 +258,4 @@ class VendHQ < Service
       api_domain: response['urls']['base'] + self.api_path
     })
   end
-
 end
-

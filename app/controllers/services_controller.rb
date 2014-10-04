@@ -17,7 +17,7 @@ class ServicesController < ApplicationController
     @service = Service.new(name: service_params[:name], current_request: request)
     @service = @service.becomes(service_params[:name].constantize) if @service.valid?
     @service.current_request = request
-    binding.pry
+
     if @service.auth_type == 'oauth2'
       redirect_to @service.auth_address and return
     end
@@ -51,8 +51,11 @@ class ServicesController < ApplicationController
   # PATCH/PUT /services/1.json
   def update
     respond_to do |format|
-      if @service.update(service_params.merge({current_request: request}))
-        @service.authenticate
+      @service.assign_attributes(service_params.merge({
+        current_request: request
+      }))
+
+      if @service.authenticate and @service.save
         format.html { redirect_to @service, notice: get_update_message('updated') }
         format.json { render :show, status: :ok, location: @service }
       else
@@ -76,9 +79,10 @@ class ServicesController < ApplicationController
     @service = current_user.services.build({
       name: 'VendHQ',
       access_code: url_params[:code],
-      custom_domain: 'https://' + url_params[:domain_prefix] + '.vendhq.com',
+      api_domain: 'https://' + url_params[:domain_prefix] + '.vendhq.com',
       current_request: request
     })
+
     @service = @service.becomes(@service.type.constantize) if @service.valid?
     @service.current_request = request
     @service.authenticate
@@ -116,7 +120,7 @@ class ServicesController < ApplicationController
         :auth_domain, :auth_path, :auth_type, :auth_user,
         :app_api_key, :app_api_secret,
         :custom_client_id, :custom_client_secret,
-        :custom_domain, :service)
+        :custom_domain, :service, :metrc_username, :metrc_password)
   end
 
   def url_params

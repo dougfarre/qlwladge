@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140913053036) do
+ActiveRecord::Schema.define(version: 20141003223715) do
 
   create_table "definitions", force: true do |t|
     t.integer  "service_id"
@@ -56,6 +56,9 @@ ActiveRecord::Schema.define(version: 20140913053036) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.string   "default"
+    t.text     "options"
+    t.string   "options_type"
+    t.string   "url"
   end
 
   create_table "services", force: true do |t|
@@ -83,6 +86,10 @@ ActiveRecord::Schema.define(version: 20140913053036) do
     t.string   "lead_path"
     t.text     "request_parameters"
     t.string   "site_name"
+    t.text     "access_code"
+    t.string   "metrc_username"
+    t.string   "metrc_password"
+    t.text     "facilities"
   end
 
   create_table "sync_operations", force: true do |t|

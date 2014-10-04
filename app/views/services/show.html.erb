@@ -1,4 +1,4 @@
-<h2><%= @service.name %></h2>
+<h3><%= @service.name %></h3>
 <b>Auth Status: </b><i><%= @service.auth_status %></i>
 <br/><br/>
 <b>Auth Type: </b><i><%= @service.auth_type %><i/>
@@ -7,16 +7,32 @@
 <br/><br/>
 <b>API Access: </b><i><%= @service.api_domain + @service.api_path %><i/>
 <br/><br/>
-<b>Authorized User: </b><i><%= @service.auth_user %><i/>
+<b>Linked to MyMits/Metrc?</b>
+<% unless @service.facilities.blank? %>
+  <i>True!<i/>
+<% else %>
+  <i>False!<i/>
+ <% end %>
 <br/><br/>
 
-<%= link_to 'Edit service', edit_service_path(@service) %> 
+<%= link_to 'Edit service', edit_service_path(@service) %>
 <br/><br/>
 
-<h2>Service API Defintions</h2>
+<h3>VendHQ Actions</h3>
+  <%= link_to 'Download Sales Data', "/" %>
+<br/><br/>
+
+<% unless @service.facilities.blank? %>
+ <h3>Metrc Actions</h3>
+ <%= link_to 'Download Product List', "/" %>
+
+<br/><br/>
+<h3>Service API Defintions</h3>
 <%= render partial: 'definitions/index', locals: { definitions: @service.definitions } %>
 
 <br/>
+<% end %>
+<br/><br/>
 <%= link_to 'Back', services_path %>
 
 

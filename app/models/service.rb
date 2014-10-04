@@ -3,6 +3,8 @@ class Service < ActiveRecord::Base
   attr_accessor :app_id, :app_secret
   attr_accessor :current_request
 
+  serialize :facilities, Array
+
   belongs_to :user
   has_many :definitions
 
@@ -25,7 +27,11 @@ class Service < ActiveRecord::Base
   end
 
   def discovery_address
-    raise "object.authorization_status is not defined"
+    raise "object.discovery_address is not defined"
+  end
+
+  def api_address
+    raise "object.api_address is not defined"
   end
 
   def get_discovery

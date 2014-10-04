@@ -1,3 +1,8 @@
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.11.1/themes/ui-lightness/jquery-ui.css">
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+<script src="https://code.jquery.com/ui/1.11.1/jquery-ui.min.js"></script>
+
 <%= form_for [@service, @definition], :html => {:multipart => true} do |f| %>
   <% if @definition.errors.any? %>
     <div id="error_explanation">
@@ -23,23 +28,36 @@
 
   <br/>
   <h3>REST API Request Parameters</h3>
-  <table style="table-layout:fixed; width:100%;">
-    <tr>
-      <th style="width: 100px; text-align:right; padding-right:25px;">Name</th>
-      <th>Description</th>
-      <th style="width:100px; text-align:left;">Default</th>
-      <th style="text-align:left;">Value</th>
-    </tr>
-    <% @definition.request_parameters.each do |param| %>
-      <% param_tag = 'request_parameters[' + param.name + ']' %>
+  <div class="col-md-12">
+    <table class="table">
       <tr>
-        <td style="text-align: right; padding-right:25px;"><%= param.name %></td>
-        <td style="word-wrap:break-word; text-align:center;"><%= param.description %></td>
-        <td><%= param.default %></td>
-        <td><%= text_field_tag param_tag %></td>
+        <th style="width: 100px; text-align:right; padding-right:25px;">Name</th>
+        <th>Description</th>
+        <th style="width:100px; text-align:left;">Default</th>
+        <th style="text-align:left;">Value</th>
       </tr>
-    <% end %>
-  </table>
+      <% @definition.request_parameters.each do |param| %>
+        <% param_tag = 'request_parameters[' + param.name + ']' %>
+        <tr>
+          <td><%= param.name %></td>
+          <td><%= param.description %></td>
+          <td><%= param.default %></td>
+          <td>
+            <% if param.options_type == 'string' %>
+              <%= text_field_tag param_tag %>
+            <% elsif param.options_type == 'date' %>
+              <%= date_field_tag param_tag %>
+            <% else %>
+              <% options = options_for_select(param.options.map{|o| [ o[:name], o[:id] ]}, selected: param.value) %>
+              <%= select_tag param_tag, options,
+                include_blank: true,
+                style: 'width:150px;' %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </table>
+  </div>
   <br/>
   <br/>
 

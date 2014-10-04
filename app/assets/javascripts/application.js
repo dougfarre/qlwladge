@@ -19,6 +19,10 @@
 var DefinitionsController = Paloma.controller('Definitions');
 var SyncOperationsController = Paloma.controller('SyncOperations');
 
+$(function() {
+  $("input[type=date]").datepicker();
+});
+
 DefinitionsController.prototype.show = function() {
   $("select").change(function() {
     if (this.value === "")  {return;}
