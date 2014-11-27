@@ -21,12 +21,15 @@ class DefinitionsController < ApplicationController
   def create
     @service = Service.find(params[:service_id])
     @definition = @service.definitions.build(definition_params)
+    redirect_to new_service_definition_path(@service), notice: 'Facility required.' and return if @definition.mits_facility.blank?
 
     @definition.destination_fields = build_destination_fields
     redirect_to edit_service_path(@service) unless @definition.destination_fields
 
+    @definition.product_groups = @service.get_product_groups
+
     @definition.mappings = build_mappings
-    redirect_to edit_service_definition_path(@service, @definition) unless @definition.mappings
+    redirect_to new_service_definition_path(@service, @definition) if @definition.mappings.blank?
 
     request_value_parameters.each do |key, value|
       request_parameter = @definition.request_parameters.find {|param| param[:name] == key}
@@ -78,8 +81,7 @@ class DefinitionsController < ApplicationController
   # Never trust parameters from the scary internet, only allow the white list through.
   def definition_params
     #params.permit(definition: [:description, :source_file, :source_file_cache ])
-    #fi:c
-    params.require(:definition).permit(:description, :source_file, :source_file_cache) rescue nil
+    params.require(:definition).permit(:description, :source_file, :source_file_cache, :mits_facility) rescue nil
   end
 
   def request_value_parameters
@@ -97,11 +99,29 @@ class DefinitionsController < ApplicationController
 
   # Do any additional processing here (like standardizing the data type)
   def build_destination_fields
-    @service.get_discovery.map{|f| DestinationField.new(f) } rescue nil
+    @service.metrc_packages(@definition.mits_facility).map{|package|
+      DestinationField.new({
+        mits_record_id: package['Id'],
+        name: package['ProductName'],
+        mits_unit_type: package['UnitOfMeasureName'],
+        mits_quantity_type: package['UnitOfMeasureQuantityType'],
+        mits_tag_id: package['TagId'],
+        mits_label: package['Label'],
+        mits_product_id: package['ProductId'],
+        mits_product_type: package['ProductId']
+      })
+    } #rescue nil
   end
 
   def build_mappings
-    @definition.get_headers.map{|header| Mapping.new(source_header: header)}
+    @definition.product_groups.map{|groupie|
+      Mapping.new({
+        source_header: groupie[:name],
+        groupie_id: groupie[:id],
+        groupie_type: groupie[:type],
+        groupie_unit: groupie[:measurement]
+      })
+    }
   end
 
   def update_definition_request_params

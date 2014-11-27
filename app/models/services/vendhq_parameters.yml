@@ -1,8 +1,8 @@
 parameters:
-  since:
-    description: 'If included, returns only register sales modified since the given time. The provided date and time should be in UTC and formtted according to ISO 8601.'
-    optional: true
-    options_type: 'date'
+  #since:
+    #description: 'If included, returns only register sales modified since the given time. The provided date and time should be in UTC and formtted according to ISO 8601.'
+    #optional: true
+    #options_type: 'date'
   outlet_id:
     description: 'If included, returns only register sales made for the given outlet, identified by ID.' 
     optional: true

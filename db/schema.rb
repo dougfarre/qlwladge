@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20141003223715) do
+ActiveRecord::Schema.define(version: 20141006014817) do
 
   create_table "definitions", force: true do |t|
     t.integer  "service_id"
@@ -20,6 +20,8 @@ ActiveRecord::Schema.define(version: 20141003223715) do
     t.datetime "updated_at"
     t.string   "description"
     t.string   "source_file"
+    t.text     "product_groups"
+    t.string   "mits_facility"
   end
 
   create_table "destination_fields", force: true do |t|
@@ -36,6 +38,14 @@ ActiveRecord::Schema.define(version: 20141003223715) do
     t.boolean  "is_required"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.string   "mits_tag"
+    t.string   "mits_unit_type"
+    t.string   "mits_quantity_type"
+    t.string   "mits_tag_id"
+    t.string   "mits_label"
+    t.string   "mits_product_id"
+    t.string   "mits_product_type"
+    t.string   "mits_record_id"
   end
 
   create_table "mappings", force: true do |t|
@@ -45,6 +55,9 @@ ActiveRecord::Schema.define(version: 20141003223715) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.boolean  "source_key"
+    t.string   "groupie_type"
+    t.string   "groupie_id"
+    t.string   "groupie_unit"
   end
 
   create_table "request_parameters", force: true do |t|

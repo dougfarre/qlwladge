@@ -3,13 +3,15 @@ require 'csv'
 class Definition < ActiveRecord::Base
   mount_uploader :source_file, SourceFileUploader, one: :file_name
 
+  serialize :product_groups, Array
+
   has_many :destination_fields, autosave: true
   has_many :request_parameters, autosave: true
   has_many :mappings, autosave: true
   has_many :sync_operations
   belongs_to :service
 
-  validates_presence_of :description, :source_file
+  validates_presence_of :description, :mits_facility, :product_groups
   validates_uniqueness_of :description
 
   after_initialize :build_request_parameters
@@ -49,11 +51,6 @@ class Definition < ActiveRecord::Base
         )
       end
     end
-  end
-
-  def get_headers
-    # this should actually return hash of all tags in mits
-    CSV.parse(self.source_file.read)[0]
   end
 end
 

@@ -60,8 +60,12 @@ class VendHQ < Service
     self.api_domain + self.lead_path
   end
 
-  def discovery_address
-    self.api_domain + self.discover_path
+  def suppliers_address
+    self.api_domain + '/api/supplier'
+  end
+
+  def products_address
+    self.api_domain + '/api/products?active=1'
   end
 
   def auth_address
@@ -77,17 +81,52 @@ class VendHQ < Service
     make_api_call(self.api_domain + path, 'get')[entity]
   end
 
-  def get_discovery
-    discovery_fields = make_api_call(self.discovery_address, 'get')
+  def get_products
+    response = make_api_call(self.products_address, 'get')
+    products = response['products']
+    pagination = response['pagination']
+    return products unless pagination
 
-    discovery_fields['result'].map { |f|
-      {
-        name: f['rest']['name'],
-        display_name: f['displayName'],
-        data_type: f['dataType'],
-        is_read_only: f['rest']['readOnly']
-      }
+    (2..pagination['pages'].to_i).each{|i|
+      next_products = make_api_call(self.products_address + '&page=' + i.to_s, 'get')
+      products.concat(next_products['products'])
     }
+
+    products
+  end
+
+  def get_suppliers
+    response = make_api_call(self.suppliers_address, 'get')
+    suppliers = response['suppliers']
+    pagination = response['pagination']
+    return suppliers unless pagination
+
+    (2..pagination['pages'].to_i).each{|i|
+      next_suppliers = make_api_call(self.suppliers_address + '?page=' + i.to_s, 'get')
+      suppliers.concat(next_suppliers['suppliers'])
+    }
+
+    suppliers
+  end
+
+  def get_product_groups
+    suppliers = self.get_suppliers.map{|gi|
+      gi.merge({'type' => 'Supplier', 'measurement' => 'Units'})
+    }
+
+    products = self.get_products.map{|gi|
+      gi.merge({'measurement' => 'Grams'})
+    }.select{|gi|
+      gi['type'] == 'Cannabis'
+    }
+
+    binding.pry
+    (suppliers + products).map {|f| {
+      name: f['name'],
+      id: f['id'],
+      type: f['type'],
+      measurement: f['measurement']
+    }}
   end
 
   def map_data(mappings, source_data)
@@ -162,6 +201,22 @@ class VendHQ < Service
     Open3.popen3(cmd) do |stdin, stdout, stderr, wait_thr|
       response = JSON.parse(stdout.read.delete!("\n"))
       return response unless response[0] == 'error'
+    end
+
+    self.update_attribute(:auth_error, error_message)
+  end
+
+  def metrc_packages(facility)
+    error_message = "Metrc credentials invalid or the service is offline."
+    cmd = Rails.root.to_s + '/product_report/node_modules/casperjs/bin/casperjs'
+    cmd << ' ' + Rails.root.to_s + '/product_report/package_scraper.js'
+    cmd << ' ' + '--username="' + self.metrc_username + '"'
+    cmd << ' ' + '--password="' + self.metrc_password + '"'
+    cmd << ' ' + '--facility="' + facility + '"'
+
+    Open3.popen3(cmd) do |stdin, stdout, stderr, wait_thr|
+      response = JSON.parse(stdout.read.delete!("\n"))
+      return response['Data'] unless response[0] == 'error'
     end
 
     self.update_attribute(:auth_error, error_message)
